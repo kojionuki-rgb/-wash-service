@@ -101,7 +101,7 @@ button,input{font:inherit}
     <div class="form-grid">
       <div class="field">
         <label for="numInput">無線番号</label>
-        <input id="numInput" inputmode="numeric" autocomplete="off" value="1234" />
+        <input id="numInput" inputmode="numeric" autocomplete="off" placeholder="無線番号" value="" />
       </div>
       <div class="field">
         <label for="depInput">次回出庫</label>
@@ -173,10 +173,10 @@ button,input{font:inherit}
 </div>
 
 <script>
-const key='washServiceStateV2';
+const key='washServiceStateV3';
 const colors={received:'#48d75a',paid:'#31a9ef',unpaid:'#ffd84d'};
 let state=JSON.parse(localStorage.getItem(key)||'{}');
-state.radioNumber ||= '1234';
+state.radioNumber ??= '';
 state.departure ||= '06:30';
 state.status ||= 'received';
 state.receivedAt ||= new Date().toISOString();
@@ -200,8 +200,8 @@ function save(){localStorage.setItem(key,JSON.stringify(state))}
 function render(){
   $('numInput').value=state.radioNumber;
   $('depInput').value=state.departure;
-  $('editorRadioNumber').textContent=state.radioNumber;
-  $('displayRadioNumber').textContent=state.radioNumber;
+  $('editorRadioNumber').textContent=state.radioNumber || '—';
+  $('displayRadioNumber').textContent=state.radioNumber || '—';
   $('editorDeparture').textContent=shortTime(state.departure);
   $('displayDeparture').textContent=shortTime(state.departure);
   const date=jpDate();
@@ -214,7 +214,7 @@ function render(){
 function syncInputs(){
   const n=$('numInput').value.trim();
   const t=$('depInput').value;
-  if(n && n!==state.radioNumber){
+  if(n!==state.radioNumber){
     state.radioNumber=n;
     state.updatedAt=new Date().toISOString();
   }
@@ -234,6 +234,7 @@ function closeSheet(){
 }
 
 $('editorStatusCard').addEventListener('click',openSheet);
+$('numInput').addEventListener('focus',e=>e.target.select());
 $('numInput').addEventListener('input',syncInputs);
 $('depInput').addEventListener('change',syncInputs);
 
@@ -251,6 +252,10 @@ sheet.addEventListener('click',e=>{if(e.target===sheet)closeSheet()});
 
 $('showBtn').addEventListener('click',()=>{
   syncInputs();
+  if(!state.radioNumber){
+    $('numInput').focus();
+    return;
+  }
   state.lastDisplayedAt=new Date().toISOString();
   save();
   editorView.classList.add('hidden');
