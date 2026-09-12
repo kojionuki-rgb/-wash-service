@@ -3,125 +3,266 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#f6f6f3" />
 <title>洗車サービス</title>
 <style>
 :root{
-  --charcoal:#2f3438;
+  --charcoal:#303438;
   --muted:#9aa0a6;
-  --line:#d8dde2;
+  --line:#d9dde1;
   --green:#48d75a;
   --blue:#31a9ef;
   --yellow:#ffd84d;
   --bg:#f6f6f3;
 }
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic",Meiryo,sans-serif;color:var(--charcoal)}
-.wrap{max-width:430px;margin:0 auto;padding:14px 14px 30px}
-.card{background:#fff;border:1.5px solid #9ca3aa;border-radius:30px;padding:24px 18px 26px;box-shadow:0 2px 10px rgba(0,0,0,.03)}
-.header{display:flex;align-items:center;gap:16px;padding:4px 8px 22px;border-bottom:1px solid var(--line)}
-.car{font-size:52px;line-height:1}
-.title{font-weight:800;font-size:34px;letter-spacing:.02em}
-.number-card{margin-top:26px;border-radius:28px;padding:22px 18px 28px;color:#fff;transition:.2s;background:var(--green);cursor:pointer;user-select:none}
-.label{font-weight:700;font-size:24px}
-.number{font-size:104px;font-weight:900;line-height:1;text-align:center;letter-spacing:.02em;margin-top:8px}
-.depart{margin-top:26px;padding:24px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);text-align:center}
-.depart .small{font-size:24px;color:#8e949a;font-weight:700}
-.depart .time{font-size:72px;font-weight:900;margin-top:6px}
-.date{text-align:center;color:#8f959b;font-size:24px;font-weight:700;padding-top:24px}
-.hint{text-align:center;color:#a2a8ae;font-size:13px;margin-top:14px}
-.sheet{position:fixed;inset:0;background:rgba(0,0,0,.25);display:none;align-items:flex-end;justify-content:center;padding:16px}
+html,body{min-height:100%}
+body{margin:0;background:var(--bg);font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic",Meiryo,sans-serif;color:var(--charcoal);-webkit-font-smoothing:antialiased}
+button,input{font:inherit}
+.hidden{display:none!important}
+
+/* 共通 */
+.logo{display:flex;align-items:center;gap:14px}
+.logo svg{width:66px;height:52px;flex:0 0 auto}
+.logo-title{font-size:34px;font-weight:900;letter-spacing:.01em;white-space:nowrap}
+.status-card{border-radius:28px;padding:22px 18px 26px;transition:.18s ease;user-select:none}
+.status-label{font-weight:800;font-size:22px}
+.status-number{font-size:100px;font-weight:950;line-height:1;text-align:center;letter-spacing:.02em;margin-top:8px}
+.depart{text-align:center}
+.depart-label{font-size:22px;color:#92989e;font-weight:800}
+.depart-time{font-size:68px;font-weight:950;line-height:1.05;margin-top:8px}
+.date{text-align:center;color:#92989e;font-size:22px;font-weight:800}
+
+/* 入力画面 */
+#editorView{max-width:460px;margin:0 auto;padding:16px 14px 34px}
+.editor-card{background:#fff;border:1.5px solid #a3a9af;border-radius:30px;padding:22px 18px 20px}
+.editor-head{padding:2px 8px 20px;border-bottom:1px solid var(--line)}
+.editor-title{font-size:16px;color:#858b91;font-weight:800;margin-top:16px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.field label{display:block;font-size:13px;color:#858b91;font-weight:800;margin:0 0 6px 4px}
+.field input{width:100%;padding:14px 13px;border:1px solid var(--line);border-radius:13px;background:#fff;color:var(--charcoal);font-size:18px;font-weight:800;outline:none}
+.field input:focus{border-color:#aeb4ba;box-shadow:0 0 0 3px rgba(70,80,90,.08)}
+.editor-preview{margin-top:18px}
+.editor-preview .status-card{cursor:pointer}
+.editor-preview .status-number{font-size:82px}
+.editor-preview .depart{padding:22px 0 18px;border-bottom:1px solid var(--line)}
+.editor-preview .depart-time{font-size:54px}
+.editor-preview .date{font-size:18px;padding-top:18px}
+.status-note{text-align:center;color:#a2a8ae;font-size:12px;margin-top:10px}
+.show-btn{margin-top:16px;width:100%;border:0;border-radius:15px;padding:15px 16px;background:var(--charcoal);color:#fff;font-size:17px;font-weight:900;cursor:pointer}
+.data-note{text-align:center;color:#a4a9ae;font-size:12px;line-height:1.5;margin:12px 8px 0}
+
+/* 依頼者表示 */
+#displayView{min-height:100vh;padding:16px 14px 24px;display:flex;align-items:flex-start;justify-content:center}
+.display-card{width:min(430px,100%);background:#fff;border:1.5px solid #a3a9af;border-radius:30px;padding:24px 18px 28px;box-shadow:0 2px 10px rgba(0,0,0,.03);cursor:pointer}
+.display-head{padding:2px 8px 22px;border-bottom:1px solid var(--line)}
+.display-card .status-card{margin-top:26px}
+.display-card .depart{margin-top:26px;padding:24px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.display-card .date{padding-top:24px}
+.return-hint{text-align:center;color:#c0c4c8;font-size:11px;margin-top:18px;letter-spacing:.04em}
+
+/* 状態選択 */
+.sheet{position:fixed;inset:0;background:rgba(0,0,0,.28);display:none;align-items:flex-end;justify-content:center;padding:16px;z-index:20}
 .sheet.show{display:flex}
-.sheetbox{width:min(430px,100%);background:#fff;border-radius:24px;padding:16px}
+.sheetbox{width:min(430px,100%);background:#fff;border-radius:24px;padding:16px;box-shadow:0 15px 40px rgba(0,0,0,.18)}
 .sheetbox h3{margin:4px 4px 14px;font-size:18px}
-.opt{width:100%;border:0;border-radius:16px;padding:16px;margin:7px 0;font-size:18px;font-weight:800;text-align:left}
+.opt{width:100%;border:0;border-radius:16px;padding:16px;margin:7px 0;font-size:18px;font-weight:900;text-align:left;cursor:pointer}
 .opt.green{background:#ddf8e2}.opt.blue{background:#dff2ff}.opt.yellow{background:#fff4bd}.opt.cancel{background:#f1f2f3}
-.edit{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
-.edit input{width:100%;padding:13px 12px;border:1px solid var(--line);border-radius:12px;font-size:16px}
-.save{margin-top:10px;width:100%;padding:14px;border:0;border-radius:14px;background:#2f3438;color:#fff;font-size:16px;font-weight:800}
-@media(max-width:380px){.title{font-size:30px}.number{font-size:88px}.depart .time{font-size:62px}}
+
+@media(max-width:380px){
+  .logo-title{font-size:30px}.logo svg{width:58px;height:46px}
+  .display-card .status-number{font-size:88px}.display-card .depart-time{font-size:60px}
+  .form-grid{grid-template-columns:1fr}
+}
 </style>
 </head>
 <body>
-<div class="wrap">
-  <div class="card">
-    <div class="header">
-      <div class="car">🚕✨</div>
-      <div class="title">洗車サービス</div>
+
+<!-- 入力用画面 -->
+<main id="editorView">
+  <section class="editor-card">
+    <div class="editor-head">
+      <div class="logo">
+        <svg viewBox="0 0 110 82" aria-hidden="true">
+          <g fill="#303438">
+            <path d="M23 35h58c6 0 11 5 11 11v19c0 6-5 11-11 11H23c-6 0-11-5-11-11V46c0-6 5-11 11-11Z"/>
+            <path d="M28 34 36 18c2-4 6-7 11-7h19c5 0 9 3 11 7l8 16H28Zm10-5h37l-5-10c-1-2-3-3-5-3H48c-2 0-4 1-5 3l-5 10Z"/>
+            <rect x="20" y="70" width="13" height="9" rx="3"/><rect x="71" y="70" width="13" height="9" rx="3"/>
+            <rect x="18" y="51" width="20" height="10" rx="5" fill="#fff"/><rect x="66" y="51" width="20" height="10" rx="5" fill="#fff"/>
+            <path d="M92 7c2 8 5 11 13 13-8 2-11 5-13 13-2-8-5-11-13-13 8-2 11-5 13-13Z"/>
+            <path d="M76 0c1.3 5 3.3 7 8.3 8.3-5 1.3-7 3.3-8.3 8.3-1.3-5-3.3-7-8.3-8.3C72.7 7 74.7 5 76 0Z"/>
+          </g>
+        </svg>
+        <div class="logo-title">洗車サービス</div>
+      </div>
     </div>
 
-    <div id="numberCard" class="number-card" title="タップで支払い状態を変更">
-      <div class="label">無線番号</div>
-      <div id="radioNumber" class="number">1234</div>
+    <div class="editor-title">受付情報を入力</div>
+    <div class="form-grid">
+      <div class="field">
+        <label for="numInput">無線番号</label>
+        <input id="numInput" inputmode="numeric" autocomplete="off" value="1234" />
+      </div>
+      <div class="field">
+        <label for="depInput">次回出庫</label>
+        <input id="depInput" type="time" value="06:30" />
+      </div>
+    </div>
+
+    <div class="editor-preview">
+      <div id="editorStatusCard" class="status-card" title="タップで状態を変更">
+        <div class="status-label">無線番号</div>
+        <div id="editorRadioNumber" class="status-number">1234</div>
+      </div>
+      <div class="status-note">無線番号カードをタップして状態変更</div>
+      <div class="depart">
+        <div class="depart-label">次回出庫</div>
+        <div id="editorDeparture" class="depart-time">6:30</div>
+      </div>
+      <div id="editorDate" class="date"></div>
+    </div>
+
+    <button id="showBtn" class="show-btn">依頼者に見せる</button>
+    <div class="data-note">受付時刻・状態変更時刻は画面に出さず、この端末内に自動記録します。</div>
+  </section>
+</main>
+
+<!-- 依頼者に見せる画面 -->
+<main id="displayView" class="hidden">
+  <section id="displayCard" class="display-card" aria-label="受付確認画面。タップで入力画面に戻ります。">
+    <div class="display-head">
+      <div class="logo">
+        <svg viewBox="0 0 110 82" aria-hidden="true">
+          <g fill="#303438">
+            <path d="M23 35h58c6 0 11 5 11 11v19c0 6-5 11-11 11H23c-6 0-11-5-11-11V46c0-6 5-11 11-11Z"/>
+            <path d="M28 34 36 18c2-4 6-7 11-7h19c5 0 9 3 11 7l8 16H28Zm10-5h37l-5-10c-1-2-3-3-5-3H48c-2 0-4 1-5 3l-5 10Z"/>
+            <rect x="20" y="70" width="13" height="9" rx="3"/><rect x="71" y="70" width="13" height="9" rx="3"/>
+            <rect x="18" y="51" width="20" height="10" rx="5" fill="#fff"/><rect x="66" y="51" width="20" height="10" rx="5" fill="#fff"/>
+            <path d="M92 7c2 8 5 11 13 13-8 2-11 5-13 13-2-8-5-11-13-13 8-2 11-5 13-13Z"/>
+            <path d="M76 0c1.3 5 3.3 7 8.3 8.3-5 1.3-7 3.3-8.3 8.3-1.3-5-3.3-7-8.3-8.3C72.7 7 74.7 5 76 0Z"/>
+          </g>
+        </svg>
+        <div class="logo-title">洗車サービス</div>
+      </div>
+    </div>
+
+    <div id="displayStatusCard" class="status-card">
+      <div class="status-label">無線番号</div>
+      <div id="displayRadioNumber" class="status-number">1234</div>
     </div>
 
     <div class="depart">
-      <div class="small">次回出庫</div>
-      <div id="departure" class="time">6:30</div>
+      <div class="depart-label">次回出庫</div>
+      <div id="displayDeparture" class="depart-time">6:30</div>
     </div>
 
-    <div id="date" class="date"></div>
-    <div class="hint">無線番号の色：緑＝受付 / 青＝支払い済み / 黄＝未収</div>
+    <div id="displayDate" class="date"></div>
+    <div class="return-hint">画面をタップすると入力画面に戻ります</div>
+  </section>
+</main>
 
-    <div class="edit">
-      <input id="numInput" inputmode="numeric" placeholder="無線番号" value="1234" />
-      <input id="depInput" type="time" value="06:30" />
-    </div>
-    <button id="saveBtn" class="save">表示を更新</button>
-  </div>
-</div>
-
+<!-- 状態変更シート -->
 <div id="sheet" class="sheet" aria-hidden="true">
   <div class="sheetbox">
     <h3>状態を変更</h3>
-    <button class="opt green" data-status="received">受付</button>
-    <button class="opt blue" data-status="paid">支払い済み</button>
-    <button class="opt yellow" data-status="unpaid">未収</button>
+    <button class="opt green" data-status="received">受付（緑）</button>
+    <button class="opt blue" data-status="paid">支払い済み（青）</button>
+    <button class="opt yellow" data-status="unpaid">未収（黄）</button>
     <button class="opt cancel" id="cancelBtn">キャンセル</button>
   </div>
 </div>
 
 <script>
-const card = document.getElementById('numberCard');
-const sheet = document.getElementById('sheet');
-const colors = {received:'#48d75a', paid:'#31a9ef', unpaid:'#ffd84d'};
-const key='washServiceStateV1';
-let state = JSON.parse(localStorage.getItem(key) || '{}');
+const key='washServiceStateV2';
+const colors={received:'#48d75a',paid:'#31a9ef',unpaid:'#ffd84d'};
+let state=JSON.parse(localStorage.getItem(key)||'{}');
 state.radioNumber ||= '1234';
 state.departure ||= '06:30';
 state.status ||= 'received';
 state.receivedAt ||= new Date().toISOString();
+state.history ||= [];
+
+const $=id=>document.getElementById(id);
+const editorView=$('editorView');
+const displayView=$('displayView');
+const sheet=$('sheet');
 
 function jpDate(d=new Date()){
   const wd=['日','月','火','水','木','金','土'][d.getDay()];
   return `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日 (${wd})`;
 }
-function render(){
-  document.getElementById('radioNumber').textContent = state.radioNumber;
-  document.getElementById('departure').textContent = state.departure.replace(/^0/,'');
-  document.getElementById('date').textContent = jpDate();
-  document.getElementById('numInput').value = state.radioNumber;
-  document.getElementById('depInput').value = state.departure;
-  card.style.background = colors[state.status];
-  card.style.color = state.status==='unpaid' ? '#2f3438' : '#fff';
-  localStorage.setItem(key, JSON.stringify(state));
+function shortTime(t){return t.replace(/^0/,'')}
+function applyStatus(card){
+  card.style.background=colors[state.status];
+  card.style.color=state.status==='unpaid'?'#303438':'#fff';
 }
-card.addEventListener('click',()=>{sheet.classList.add('show');sheet.setAttribute('aria-hidden','false')});
-document.querySelectorAll('[data-status]').forEach(btn=>btn.addEventListener('click',()=>{
-  state.status=btn.dataset.status;
-  state.statusChangedAt=new Date().toISOString();
+function save(){localStorage.setItem(key,JSON.stringify(state))}
+function render(){
+  $('numInput').value=state.radioNumber;
+  $('depInput').value=state.departure;
+  $('editorRadioNumber').textContent=state.radioNumber;
+  $('displayRadioNumber').textContent=state.radioNumber;
+  $('editorDeparture').textContent=shortTime(state.departure);
+  $('displayDeparture').textContent=shortTime(state.departure);
+  const date=jpDate();
+  $('editorDate').textContent=date;
+  $('displayDate').textContent=date;
+  applyStatus($('editorStatusCard'));
+  applyStatus($('displayStatusCard'));
+  save();
+}
+function syncInputs(){
+  const n=$('numInput').value.trim();
+  const t=$('depInput').value;
+  if(n && n!==state.radioNumber){
+    state.radioNumber=n;
+    state.updatedAt=new Date().toISOString();
+  }
+  if(t && t!==state.departure){
+    state.departure=t;
+    state.updatedAt=new Date().toISOString();
+  }
   render();
+}
+function openSheet(){
+  sheet.classList.add('show');
+  sheet.setAttribute('aria-hidden','false');
+}
+function closeSheet(){
   sheet.classList.remove('show');
-}));
-document.getElementById('cancelBtn').addEventListener('click',()=>sheet.classList.remove('show'));
-sheet.addEventListener('click',e=>{if(e.target===sheet)sheet.classList.remove('show')});
-document.getElementById('saveBtn').addEventListener('click',()=>{
-  const n=document.getElementById('numInput').value.trim();
-  const t=document.getElementById('depInput').value;
-  if(n) state.radioNumber=n;
-  if(t) state.departure=t;
-  if(!state.receivedAt) state.receivedAt=new Date().toISOString();
+  sheet.setAttribute('aria-hidden','true');
+}
+
+$('editorStatusCard').addEventListener('click',openSheet);
+$('numInput').addEventListener('input',syncInputs);
+$('depInput').addEventListener('change',syncInputs);
+
+document.querySelectorAll('[data-status]').forEach(btn=>btn.addEventListener('click',()=>{
+  const before=state.status;
+  state.status=btn.dataset.status;
+  const now=new Date().toISOString();
+  state.statusChangedAt=now;
+  state.history.push({type:'status',from:before,to:state.status,at:now});
   render();
+  closeSheet();
+}));
+$('cancelBtn').addEventListener('click',closeSheet);
+sheet.addEventListener('click',e=>{if(e.target===sheet)closeSheet()});
+
+$('showBtn').addEventListener('click',()=>{
+  syncInputs();
+  state.lastDisplayedAt=new Date().toISOString();
+  save();
+  editorView.classList.add('hidden');
+  displayView.classList.remove('hidden');
+  window.scrollTo(0,0);
 });
+$('displayCard').addEventListener('click',()=>{
+  displayView.classList.add('hidden');
+  editorView.classList.remove('hidden');
+  window.scrollTo(0,0);
+});
+
 render();
 </script>
 </body>
