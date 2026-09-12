@@ -99,6 +99,72 @@ button{cursor:pointer}
   .display-card .status-number{font-size:88px}.display-card .depart-time{font-size:60px}
   .form-grid{grid-template-columns:1fr}
 }
+
+.list-tools{
+  display:grid;
+  grid-template-columns:auto 1fr auto;
+  gap:8px;
+  align-items:center;
+  margin:14px 0 10px;
+}
+.day-btn{
+  border:1px solid var(--line);
+  background:#fff;
+  color:var(--charcoal);
+  border-radius:12px;
+  padding:10px 12px;
+  font-weight:900;
+  min-width:44px;
+}
+.date-pick{
+  width:100%;
+  border:1px solid var(--line);
+  border-radius:12px;
+  padding:10px 12px;
+  background:#fff;
+  color:var(--charcoal);
+  font-weight:900;
+  text-align:center;
+}
+.filter-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+  margin-bottom:10px;
+}
+.filter-grid input,.filter-grid select{
+  width:100%;
+  border:1px solid var(--line);
+  border-radius:12px;
+  padding:11px 12px;
+  background:#fff;
+  color:var(--charcoal);
+  font-size:14px;
+  font-weight:800;
+}
+.filter-caption{
+  color:#a0a6ac;
+  font-size:11px;
+  font-weight:800;
+  margin:0 2px 4px;
+}
+.list-stats{
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+  margin:8px 0 2px;
+}
+.stat-pill{
+  border-radius:999px;
+  padding:6px 9px;
+  font-size:11px;
+  font-weight:900;
+  background:#f0f2f3;
+}
+@media(max-width:380px){
+  .filter-grid{grid-template-columns:1fr}
+}
+
 </style>
 </head>
 <body>
@@ -194,12 +260,36 @@ button{cursor:pointer}
       </div>
       <button id="backBtn" class="back-btn">戻る</button>
     </div>
+    <div class="list-tools">
+      <button id="prevDayBtn" class="day-btn" aria-label="前日">‹</button>
+      <input id="listDateInput" class="date-pick" type="date" />
+      <button id="nextDayBtn" class="day-btn" aria-label="翌日">›</button>
+    </div>
+
+    <div class="filter-grid">
+      <div>
+        <div class="filter-caption">無線番号で検索</div>
+        <input id="searchInput" type="search" inputmode="numeric" placeholder="例：1234" />
+      </div>
+      <div>
+        <div class="filter-caption">状態で絞り込み</div>
+        <select id="statusFilter">
+          <option value="all">すべて</option>
+          <option value="received">受付</option>
+          <option value="paid">支払い済み</option>
+          <option value="unpaid">未収</option>
+          <option value="cancelled">キャンセル</option>
+        </select>
+      </div>
+    </div>
+
+    <div id="listStats" class="list-stats"></div>
+
     <div class="list-summary">
       <span id="countText">0件</span>
       <span>新しい順</span>
     </div>
     <div id="receptionList" class="reception-list"></div>
-    <button id="clearTodayBtn" class="clear-btn">今日のリストを消去</button>
   </section>
 </main>
 
@@ -214,12 +304,24 @@ button{cursor:pointer}
 </div>
 
 
+
 <script>
 const SUPABASE_URL='https://vqokuktwqrhxsvkwgyug.supabase.co';
 const SUPABASE_KEY='sb_publishable_dMrMp7HYQNxF0KlxrJHEPA_NJBgXR4n';
-const localKey='washServiceV8Local';
-const colors={received:'#48d75a',paid:'#31a9ef',unpaid:'#ffd84d',cancelled:'#ff9fbd'};
-const labels={received:'受付',paid:'支払い済み',unpaid:'未収',cancelled:'キャンセル'};
+const localKey='washServiceV9Local';
+
+const colors={
+  received:'#48d75a',
+  paid:'#31a9ef',
+  unpaid:'#ffd84d',
+  cancelled:'#ff9fbd'
+};
+const labels={
+  received:'受付',
+  paid:'支払い済み',
+  unpaid:'未収',
+  cancelled:'キャンセル'
+};
 const $=id=>document.getElementById(id);
 
 let local=JSON.parse(localStorage.getItem(localKey)||'{}');
@@ -234,6 +336,9 @@ let state={
   statusChangedAt:null
 };
 
+let selectedListDate=todayYmd();
+let dayRows=[];
+
 function saveLocal(){
   local.departure=state.departure;
   localStorage.setItem(localKey,JSON.stringify(local));
@@ -243,41 +348,65 @@ function headers(extra={}){
   return {
     'apikey': SUPABASE_KEY,
     'Authorization': `Bearer ${SUPABASE_KEY}`,
-    'Content-Type': 'application/json',
+    'Content-Type':'application/json',
     ...extra
   };
 }
 
-async function api(path, options={}){
-  const res=await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+async function api(path,options={}){
+  const res=await fetch(`${SUPABASE_URL}/rest/v1/${path}`,{
     ...options,
-    headers: headers(options.headers||{})
+    headers:headers(options.headers||{})
   });
   if(!res.ok){
     const msg=await res.text();
-    throw new Error(msg || `HTTP ${res.status}`);
+    throw new Error(msg||`HTTP ${res.status}`);
   }
   const txt=await res.text();
   return txt ? JSON.parse(txt) : null;
+}
+
+function ymdFromDate(d){
+  const y=d.getFullYear();
+  const m=String(d.getMonth()+1).padStart(2,'0');
+  const day=String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+}
+function todayYmd(){ return ymdFromDate(new Date()); }
+
+function localDateFromYmd(ymd){
+  const [y,m,d]=ymd.split('-').map(Number);
+  return new Date(y,m-1,d,0,0,0,0);
 }
 
 function jpDate(d=new Date()){
   const wd=['日','月','火','水','木','金','土'][d.getDay()];
   return `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日 (${wd})`;
 }
+
+function jpDateFromYmd(ymd){
+  return jpDate(localDateFromYmd(ymd));
+}
+
 function timeLabel(iso){
   if(!iso) return '—';
   const d=new Date(iso);
   return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
 }
-function shortTime(t){return (t||'').replace(/^0/,'')}
+
+function shortTime(t){ return (t||'').replace(/^0/,''); }
+
 function escapeHtml(s){
-  return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
+  return String(s).replace(/[&<>"']/g,m=>({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'
+  }[m]));
 }
+
 function applyStatus(card,status=state.status){
   card.style.background=colors[status]||colors.received;
   card.style.color=(status==='unpaid'||status==='cancelled')?'#303438':'#fff';
 }
+
 function render(){
   $('numInput').value=state.radioNumber;
   $('depInput').value=state.departure;
@@ -291,11 +420,13 @@ function render(){
   applyStatus($('displayStatusCard'));
   saveLocal();
 }
+
 function syncInputs(){
   state.radioNumber=$('numInput').value.trim();
   if($('depInput').value) state.departure=$('depInput').value;
   render();
 }
+
 function newReception(){
   state={
     id:null,
@@ -313,18 +444,18 @@ function newReception(){
 
 async function insertReception(){
   const now=new Date().toISOString();
-  const rows=await api('wash_receptions', {
+  const rows=await api('wash_receptions',{
     method:'POST',
     headers:{'Prefer':'return=representation'},
     body:JSON.stringify({
-      radio_number: state.radioNumber,
-      departure_time: state.departure,
-      status: state.status,
-      received_at: now,
-      status_changed_at: now
+      radio_number:state.radioNumber,
+      departure_time:state.departure,
+      status:state.status,
+      received_at:now,
+      status_changed_at:now
     })
   });
-  const r=rows && rows[0];
+  const r=rows&&rows[0];
   if(r){
     state.id=r.id;
     state.receivedAt=r.received_at;
@@ -336,14 +467,14 @@ async function updateCurrentRecord(){
   if(!state.id) return;
   const now=new Date().toISOString();
   state.statusChangedAt=now;
-  await api(`wash_receptions?id=eq.${encodeURIComponent(state.id)}`, {
+  await api(`wash_receptions?id=eq.${encodeURIComponent(state.id)}`,{
     method:'PATCH',
     headers:{'Prefer':'return=minimal'},
     body:JSON.stringify({
-      radio_number: state.radioNumber,
-      departure_time: state.departure,
-      status: state.status,
-      status_changed_at: now
+      radio_number:state.radioNumber,
+      departure_time:state.departure,
+      status:state.status,
+      status_changed_at:now
     })
   });
 }
@@ -357,43 +488,101 @@ function closeSheet(){
   $('sheet').setAttribute('aria-hidden','true');
 }
 
-function localDayRange(){
-  const now=new Date();
-  const start=new Date(now.getFullYear(),now.getMonth(),now.getDate(),0,0,0,0);
-  const end=new Date(now.getFullYear(),now.getMonth(),now.getDate()+1,0,0,0,0);
+function dateRangeForYmd(ymd){
+  const start=localDateFromYmd(ymd);
+  const end=new Date(start.getFullYear(),start.getMonth(),start.getDate()+1,0,0,0,0);
   return [start.toISOString(),end.toISOString()];
 }
 
-async function loadToday(){
-  const [start,end]=localDayRange();
+async function loadDay(ymd){
+  const [start,end]=dateRangeForYmd(ymd);
   const q=`wash_receptions?select=id,radio_number,departure_time,status,received_at,status_changed_at&received_at=gte.${encodeURIComponent(start)}&received_at=lt.${encodeURIComponent(end)}&order=received_at.desc`;
-  return await api(q, {method:'GET'});
+  return await api(q,{method:'GET'});
+}
+
+function changeListDate(days){
+  const d=localDateFromYmd(selectedListDate);
+  d.setDate(d.getDate()+days);
+  selectedListDate=ymdFromDate(d);
+  $('listDateInput').value=selectedListDate;
+  refreshList();
 }
 
 async function showList(){
+  selectedListDate=todayYmd();
+  $('listDateInput').value=selectedListDate;
+  $('searchInput').value='';
+  $('statusFilter').value='all';
+
   $('editorView').classList.add('hidden');
   $('displayView').classList.add('hidden');
   $('listView').classList.remove('hidden');
   $('receptionList').innerHTML='<div class="empty">読み込み中…</div>';
   window.scrollTo(0,0);
+
+  await refreshList();
+}
+
+async function refreshList(){
+  $('listDate').textContent=jpDateFromYmd(selectedListDate);
+  $('receptionList').innerHTML='<div class="empty">読み込み中…</div>';
+
   try{
-    await renderList();
+    dayRows=await loadDay(selectedListDate);
+    applyListFilters();
   }catch(e){
     $('receptionList').innerHTML='<div class="empty">リストを読み込めませんでした</div>';
+    $('countText').textContent='0件';
+    $('listStats').innerHTML='';
     console.error(e);
   }
 }
 
-async function renderList(){
-  const rows=await loadToday();
-  $('listDate').textContent=jpDate();
+function applyListFilters(){
+  const q=$('searchInput').value.trim();
+  const status=$('statusFilter').value;
+
+  const filtered=dayRows.filter(r=>{
+    const radioOk=!q || String(r.radio_number||'').includes(q);
+    const statusOk=status==='all' || r.status===status;
+    return radioOk && statusOk;
+  });
+
+  renderListStats(dayRows);
+  renderRows(filtered);
+}
+
+function renderListStats(rows){
+  const counts={
+    all:rows.length,
+    received:0,
+    paid:0,
+    unpaid:0,
+    cancelled:0
+  };
+  rows.forEach(r=>{
+    if(counts[r.status]!==undefined) counts[r.status]++;
+  });
+
+  $('listStats').innerHTML=`
+    <span class="stat-pill">全 ${counts.all}</span>
+    <span class="stat-pill" style="background:#ddf8e2">受付 ${counts.received}</span>
+    <span class="stat-pill" style="background:#dff2ff">済 ${counts.paid}</span>
+    <span class="stat-pill" style="background:#fff4bd">未収 ${counts.unpaid}</span>
+    <span class="stat-pill" style="background:#ffd6e3">取消 ${counts.cancelled}</span>
+  `;
+}
+
+function renderRows(rows){
   $('countText').textContent=`${rows.length}件`;
   const box=$('receptionList');
   box.innerHTML='';
+
   if(!rows.length){
-    box.innerHTML='<div class="empty">まだ受付はありません</div>';
+    box.innerHTML='<div class="empty">該当する受付はありません</div>';
     return;
   }
+
   rows.forEach(r=>{
     const el=document.createElement('div');
     el.className='row';
@@ -434,7 +623,9 @@ document.querySelectorAll('[data-status]').forEach(btn=>btn.addEventListener('cl
   }
 }));
 
-$('sheet').addEventListener('click',e=>{if(e.target===$('sheet'))closeSheet()});
+$('sheet').addEventListener('click',e=>{
+  if(e.target===$('sheet')) closeSheet();
+});
 
 $('showBtn').addEventListener('click',async()=>{
   syncInputs();
@@ -442,13 +633,16 @@ $('showBtn').addEventListener('click',async()=>{
     $('numInput').focus();
     return;
   }
+
   const btn=$('showBtn');
   const old=btn.textContent;
   btn.disabled=true;
   btn.textContent='保存中…';
+
   try{
     if(!state.id) await insertReception();
     else await updateCurrentRecord();
+
     render();
     $('editorView').classList.add('hidden');
     $('displayView').classList.remove('hidden');
@@ -470,16 +664,28 @@ $('displayCard').addEventListener('click',()=>{
 });
 
 $('listBtn').addEventListener('click',showList);
+
 $('backBtn').addEventListener('click',()=>{
   $('listView').classList.add('hidden');
   $('editorView').classList.remove('hidden');
   window.scrollTo(0,0);
 });
 
-$('clearTodayBtn').style.display='none';
+$('prevDayBtn').addEventListener('click',()=>changeListDate(-1));
+$('nextDayBtn').addEventListener('click',()=>changeListDate(1));
+
+$('listDateInput').addEventListener('change',()=>{
+  if(!$('listDateInput').value) return;
+  selectedListDate=$('listDateInput').value;
+  refreshList();
+});
+
+$('searchInput').addEventListener('input',applyListFilters);
+$('statusFilter').addEventListener('change',applyListFilters);
 
 newReception();
 </script>
+
 
 </body>
 </html>
