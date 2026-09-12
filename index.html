@@ -173,14 +173,16 @@ button,input{font:inherit}
 </div>
 
 <script>
-const key='washServiceStateV3';
+const key='washServiceStateV4';
 const colors={received:'#48d75a',paid:'#31a9ef',unpaid:'#ffd84d'};
-let state=JSON.parse(localStorage.getItem(key)||'{}');
-state.radioNumber ??= '';
-state.departure ||= '06:30';
-state.status ||= 'received';
-state.receivedAt ||= new Date().toISOString();
-state.history ||= [];
+let saved=JSON.parse(localStorage.getItem(key)||'{}');
+let state={
+  radioNumber: '',
+  departure: saved.departure || '06:30',
+  status: 'received',
+  receivedAt: new Date().toISOString(),
+  history: Array.isArray(saved.history) ? saved.history : []
+};
 
 const $=id=>document.getElementById(id);
 const editorView=$('editorView');
@@ -269,6 +271,9 @@ $('displayCard').addEventListener('click',()=>{
 });
 
 render();
+$('numInput').value='';
+$('editorRadioNumber').textContent='—';
+$('displayRadioNumber').textContent='—';
 </script>
 </body>
 </html>
