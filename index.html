@@ -67,7 +67,7 @@ button,input{font:inherit}
 .sheetbox{width:min(430px,100%);background:#fff;border-radius:24px;padding:16px;box-shadow:0 15px 40px rgba(0,0,0,.18)}
 .sheetbox h3{margin:4px 4px 14px;font-size:18px}
 .opt{width:100%;border:0;border-radius:16px;padding:16px;margin:7px 0;font-size:18px;font-weight:900;text-align:left;cursor:pointer}
-.opt.green{background:#ddf8e2}.opt.blue{background:#dff2ff}.opt.yellow{background:#fff4bd}.opt.cancel{background:#f1f2f3}
+.opt.green{background:#ddf8e2}.opt.blue{background:#dff2ff}.opt.yellow{background:#fff4bd}.opt.cancel{background:#ffd6e3}
 
 @media(max-width:380px){
   .logo-title{font-size:30px}.logo svg{width:58px;height:46px}
@@ -174,13 +174,13 @@ button,input{font:inherit}
     <button class="opt green" data-status="received">受付（緑）</button>
     <button class="opt blue" data-status="paid">支払い済み（青）</button>
     <button class="opt yellow" data-status="unpaid">未収（黄）</button>
-    <button class="opt cancel" id="cancelBtn">キャンセル</button>
+    <button class="opt cancel" data-status="cancelled">キャンセル（ピンク）</button>
   </div>
 </div>
 
 <script>
-const key='washServiceStateV5';
-const colors={received:'#48d75a',paid:'#31a9ef',unpaid:'#ffd84d'};
+const key='washServiceStateV6';
+const colors={received:'#48d75a',paid:'#31a9ef',unpaid:'#ffd84d',cancelled:'#ff9fbd'};
 let saved=JSON.parse(localStorage.getItem(key)||'{}');
 let state={
   radioNumber: '',
@@ -203,7 +203,7 @@ function jpDate(d=new Date()){
 function shortTime(t){return t.replace(/^0/,'')}
 function applyStatus(card){
   card.style.background=colors[state.status];
-  card.style.color=state.status==='unpaid'?'#303438':'#fff';
+  card.style.color=(state.status==='unpaid'||state.status==='cancelled')?'#303438':'#fff';
 }
 function save(){localStorage.setItem(key,JSON.stringify(state))}
 function render(){
@@ -251,12 +251,13 @@ document.querySelectorAll('[data-status]').forEach(btn=>btn.addEventListener('cl
   const before=state.status;
   state.status=btn.dataset.status;
   const now=new Date().toISOString();
+  if(state.status==='cancelled') state.cancelledAt=now;
   state.statusChangedAt=now;
   state.history.push({type:'status',from:before,to:state.status,at:now});
   render();
   closeSheet();
 }));
-$('cancelBtn').addEventListener('click',closeSheet);
+
 sheet.addEventListener('click',e=>{if(e.target===sheet)closeSheet()});
 
 $('showBtn').addEventListener('click',()=>{
