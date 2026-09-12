@@ -74,6 +74,12 @@ button,input{font:inherit}
   .display-card .status-number{font-size:88px}.display-card .depart-time{font-size:60px}
   .form-grid{grid-template-columns:1fr}
 }
+
+    .status-received{background:#52d85a}
+    .status-paid{background:#2f9ff3}
+    .status-unpaid{background:#ffd84d;color:#2d3237}
+    .status-cancelled{background:#ff9fbd;color:#2d3237}
+
 </style>
 </head>
 <body>
@@ -173,7 +179,7 @@ button,input{font:inherit}
 </div>
 
 <script>
-const key='washServiceStateV4';
+const key='washServiceStateV5';
 const colors={received:'#48d75a',paid:'#31a9ef',unpaid:'#ffd84d'};
 let saved=JSON.parse(localStorage.getItem(key)||'{}');
 let state={
@@ -181,6 +187,7 @@ let state={
   departure: saved.departure || '06:30',
   status: 'received',
   receivedAt: new Date().toISOString(),
+  cancelledAt: null,
   history: Array.isArray(saved.history) ? saved.history : []
 };
 
