@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>洗車サービス</title>
+<style>
+:root{
+  --charcoal:#2f3438;
+  --muted:#9aa0a6;
+  --line:#d8dde2;
+  --green:#48d75a;
+  --blue:#31a9ef;
+  --yellow:#ffd84d;
+  --bg:#f6f6f3;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic",Meiryo,sans-serif;color:var(--charcoal)}
+.wrap{max-width:430px;margin:0 auto;padding:14px 14px 30px}
+.card{background:#fff;border:1.5px solid #9ca3aa;border-radius:30px;padding:24px 18px 26px;box-shadow:0 2px 10px rgba(0,0,0,.03)}
+.header{display:flex;align-items:center;gap:16px;padding:4px 8px 22px;border-bottom:1px solid var(--line)}
+.car{font-size:52px;line-height:1}
+.title{font-weight:800;font-size:34px;letter-spacing:.02em}
+.number-card{margin-top:26px;border-radius:28px;padding:22px 18px 28px;color:#fff;transition:.2s;background:var(--green);cursor:pointer;user-select:none}
+.label{font-weight:700;font-size:24px}
+.number{font-size:104px;font-weight:900;line-height:1;text-align:center;letter-spacing:.02em;margin-top:8px}
+.depart{margin-top:26px;padding:24px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);text-align:center}
+.depart .small{font-size:24px;color:#8e949a;font-weight:700}
+.depart .time{font-size:72px;font-weight:900;margin-top:6px}
+.date{text-align:center;color:#8f959b;font-size:24px;font-weight:700;padding-top:24px}
+.hint{text-align:center;color:#a2a8ae;font-size:13px;margin-top:14px}
+.sheet{position:fixed;inset:0;background:rgba(0,0,0,.25);display:none;align-items:flex-end;justify-content:center;padding:16px}
+.sheet.show{display:flex}
+.sheetbox{width:min(430px,100%);background:#fff;border-radius:24px;padding:16px}
+.sheetbox h3{margin:4px 4px 14px;font-size:18px}
+.opt{width:100%;border:0;border-radius:16px;padding:16px;margin:7px 0;font-size:18px;font-weight:800;text-align:left}
+.opt.green{background:#ddf8e2}.opt.blue{background:#dff2ff}.opt.yellow{background:#fff4bd}.opt.cancel{background:#f1f2f3}
+.edit{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+.edit input{width:100%;padding:13px 12px;border:1px solid var(--line);border-radius:12px;font-size:16px}
+.save{margin-top:10px;width:100%;padding:14px;border:0;border-radius:14px;background:#2f3438;color:#fff;font-size:16px;font-weight:800}
+@media(max-width:380px){.title{font-size:30px}.number{font-size:88px}.depart .time{font-size:62px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <div class="header">
+      <div class="car">🚕✨</div>
+      <div class="title">洗車サービス</div>
+    </div>
+
+    <div id="numberCard" class="number-card" title="タップで支払い状態を変更">
+      <div class="label">無線番号</div>
+      <div id="radioNumber" class="number">1234</div>
+    </div>
+
+    <div class="depart">
+      <div class="small">次回出庫</div>
+      <div id="departure" class="time">6:30</div>
+    </div>
+
+    <div id="date" class="date"></div>
+    <div class="hint">無線番号の色：緑＝受付 / 青＝支払い済み / 黄＝未収</div>
+
+    <div class="edit">
+      <input id="numInput" inputmode="numeric" placeholder="無線番号" value="1234" />
+      <input id="depInput" type="time" value="06:30" />
+    </div>
+    <button id="saveBtn" class="save">表示を更新</button>
+  </div>
+</div>
+
+<div id="sheet" class="sheet" aria-hidden="true">
+  <div class="sheetbox">
+    <h3>状態を変更</h3>
+    <button class="opt green" data-status="received">受付</button>
+    <button class="opt blue" data-status="paid">支払い済み</button>
+    <button class="opt yellow" data-status="unpaid">未収</button>
+    <button class="opt cancel" id="cancelBtn">キャンセル</button>
+  </div>
+</div>
+
+<script>
+const card = document.getElementById('numberCard');
+const sheet = document.getElementById('sheet');
+const colors = {received:'#48d75a', paid:'#31a9ef', unpaid:'#ffd84d'};
+const key='washServiceStateV1';
+let state = JSON.parse(localStorage.getItem(key) || '{}');
+state.radioNumber ||= '1234';
+state.departure ||= '06:30';
+state.status ||= 'received';
+state.receivedAt ||= new Date().toISOString();
+
+function jpDate(d=new Date()){
+  const wd=['日','月','火','水','木','金','土'][d.getDay()];
+  return `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日 (${wd})`;
+}
+function render(){
+  document.getElementById('radioNumber').textContent = state.radioNumber;
+  document.getElementById('departure').textContent = state.departure.replace(/^0/,'');
+  document.getElementById('date').textContent = jpDate();
+  document.getElementById('numInput').value = state.radioNumber;
+  document.getElementById('depInput').value = state.departure;
+  card.style.background = colors[state.status];
+  card.style.color = state.status==='unpaid' ? '#2f3438' : '#fff';
+  localStorage.setItem(key, JSON.stringify(state));
+}
+card.addEventListener('click',()=>{sheet.classList.add('show');sheet.setAttribute('aria-hidden','false')});
+document.querySelectorAll('[data-status]').forEach(btn=>btn.addEventListener('click',()=>{
+  state.status=btn.dataset.status;
+  state.statusChangedAt=new Date().toISOString();
+  render();
+  sheet.classList.remove('show');
+}));
+document.getElementById('cancelBtn').addEventListener('click',()=>sheet.classList.remove('show'));
+sheet.addEventListener('click',e=>{if(e.target===sheet)sheet.classList.remove('show')});
+document.getElementById('saveBtn').addEventListener('click',()=>{
+  const n=document.getElementById('numInput').value.trim();
+  const t=document.getElementById('depInput').value;
+  if(n) state.radioNumber=n;
+  if(t) state.departure=t;
+  if(!state.receivedAt) state.receivedAt=new Date().toISOString();
+  render();
+});
+render();
+</script>
+</body>
+</html>
