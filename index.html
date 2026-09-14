@@ -666,6 +666,20 @@ $('displayCard').addEventListener('click',()=>{
 $('listBtn').addEventListener('click',showList);
 
 $('backBtn').addEventListener('click',()=>{
+  // 一覧から戻るとき、今日の最新受付をメイン画面へ反映。
+  // dayRows は新しい順なので先頭が最新。
+  if(selectedListDate===todayYmd() && dayRows && dayRows.length){
+    const r=dayRows[0];
+    state={
+      id:r.id,
+      radioNumber:String(r.radio_number||''),
+      departure:(r.departure_time||'06:30').slice(0,5),
+      status:r.status||'received',
+      receivedAt:r.received_at||null,
+      statusChangedAt:r.status_changed_at||r.received_at||null
+    };
+    render();
+  }
   $('listView').classList.add('hidden');
   $('editorView').classList.remove('hidden');
   window.scrollTo(0,0);
@@ -683,7 +697,32 @@ $('listDateInput').addEventListener('change',()=>{
 $('searchInput').addEventListener('input',applyListFilters);
 $('statusFilter').addEventListener('change',applyListFilters);
 
-newReception();
+async function loadLatestReceptionOnStart(){
+  // LINE側など別画面から登録された「今日の最新受付」を、
+  // 管理画面を開いた時点で自動的にメインカードへ反映する。
+  try{
+    const rows=await loadDay(todayYmd());
+    if(rows && rows.length){
+      const r=rows[0];
+      state={
+        id:r.id,
+        radioNumber:String(r.radio_number||''),
+        departure:(r.departure_time||local.departure||'06:30').slice(0,5),
+        status:r.status||'received',
+        receivedAt:r.received_at||null,
+        statusChangedAt:r.status_changed_at||r.received_at||null
+      };
+      render();
+    }else{
+      newReception();
+    }
+  }catch(e){
+    console.error(e);
+    newReception();
+  }
+}
+
+loadLatestReceptionOnStart();
 </script>
 
 
