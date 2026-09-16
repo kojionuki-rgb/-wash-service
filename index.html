@@ -287,7 +287,7 @@ button{cursor:pointer}
     <div id="listStats" class="list-stats"></div>
 
     <div class="list-summary">
-      <span id="countText">0件</span>
+      <span><span id="countText">0件</span><span id="totalAmount" style="margin-left:10px;color:#a7adb2;font-size:13px;font-weight:700">合計 0円</span></span>
       <span>新しい順</span>
     </div>
     <div id="receptionList" class="reception-list"></div>
@@ -534,6 +534,7 @@ async function refreshList(){
   }catch(e){
     $('receptionList').innerHTML='<div class="empty">リストを読み込めませんでした</div>';
     $('countText').textContent='0件';
+    if($('totalAmount')) $('totalAmount').textContent='合計 0円';
     $('listStats').innerHTML='';
     console.error(e);
   }
@@ -576,6 +577,8 @@ function renderListStats(rows){
 
 function renderRows(rows){
   $('countText').textContent=`${rows.length}件`;
+  const billableCount=rows.filter(r=>r.status!=='cancelled').length;
+  $('totalAmount').textContent=`合計 ${(billableCount*1300).toLocaleString('ja-JP')}円`;
   const box=$('receptionList');
   box.innerHTML='';
 
