@@ -585,8 +585,18 @@ function renderRows(rows){
   }
 
   rows.forEach(r=>{
-    const el=document.createElement('div');
+    const wrap=document.createElement('div');
+    wrap.style.marginBottom='10px';
+
+    const el=document.createElement('button');
+    el.type='button';
     el.className='row';
+    el.style.width='100%';
+    el.style.textAlign='left';
+    el.style.font='inherit';
+    el.style.color='inherit';
+    el.style.appearance='none';
+    el.style.webkitAppearance='none';
     el.innerHTML=`
       <div class="dot" style="background:${colors[r.status]||colors.received}"></div>
       <div class="row-main">
@@ -603,30 +613,61 @@ function renderRows(rows){
         <div class="row-dep-label">次回出庫</div>
         <div class="row-dep-time">${shortTime((r.departure_time||'').slice(0,5))}</div>
       </div>`;
-    el.setAttribute('role','button');
-    el.setAttribute('tabindex','0');
-    el.setAttribute('aria-label',`無線番号 ${r.radio_number} を選択`);
-    const selectRow=()=>{
-      state={
-        id:r.id,
-        radioNumber:String(r.radio_number||''),
-        departure:(r.departure_time||'06:30').slice(0,5),
-        status:r.status||'received',
-        receivedAt:r.received_at||null,
-        statusChangedAt:r.status_changed_at||r.received_at||null
-      };
-      render();
-      $('listView').classList.add('hidden');
-      $('displayView').classList.add('hidden');
-      $('editorView').classList.remove('hidden');
-      window.scrollTo(0,0);
-    };
-    el.addEventListener('click',selectRow);
-    el.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();selectRow();}});
-    box.appendChild(el);
+
+    const actions=document.createElement('div');
+    actions.style.display='none';
+    actions.style.gridTemplateColumns='repeat(2,1fr)';
+    actions.style.gap='8px';
+    actions.style.padding='10px 4px 2px';
+    actions.innerHTML=`
+      <button type="button" data-s="received" style="border:0;border-radius:13px;padding:13px 8px;background:#ddf8e2;font-weight:900;font-size:14px">受付</button>
+      <button type="button" data-s="paid" style="border:0;border-radius:13px;padding:13px 8px;background:#dff2ff;font-weight:900;font-size:14px">支払い済み</button>
+      <button type="button" data-s="unpaid" style="border:0;border-radius:13px;padding:13px 8px;background:#fff4bd;font-weight:900;font-size:14px">未収</button>
+      <button type="button" data-s="cancelled" style="border:0;border-radius:13px;padding:13px 8px;background:#ffd6e3;font-weight:900;font-size:14px">キャンセル</button>`;
+
+    el.addEventListener('click',()=>{
+      const open=actions.style.display==='grid';
+      document.querySelectorAll('.list-inline-actions').forEach(a=>a.style.display='none');
+      actions.style.display=open?'none':'grid';
+    });
+    actions.classList.add('list-inline-actions');
+
+    actions.querySelectorAll('[data-s]').forEach(btn=>{
+      btn.addEventListener('click',async e=>{
+        e.stopPropagation();
+        const next=btn.dataset.s;
+        const old=btn.textContent;
+        btn.disabled=true;
+        btn.textContent='保存中…';
+        try{
+          const now=new Date().toISOString();
+          await api(`wash_receptions?id=eq.${encodeURIComponent(r.id)}`,{
+            method:'PATCH',
+            headers:{'Prefer':'return=minimal'},
+            body:JSON.stringify({status:next,status_changed_at:now})
+          });
+          r.status=next;
+          r.status_changed_at=now;
+          if(state.id===r.id){
+            state.status=next;
+            state.statusChangedAt=now;
+            render();
+          }
+          await refreshList();
+        }catch(err){
+          console.error(err);
+          alert('状態を保存できませんでした。通信状態を確認してください。');
+          btn.disabled=false;
+          btn.textContent=old;
+        }
+      });
+    });
+
+    wrap.appendChild(el);
+    wrap.appendChild(actions);
+    box.appendChild(wrap);
   });
 }
-
 $('editorStatusCard').addEventListener('click',openSheet);
 $('numInput').addEventListener('focus',e=>e.target.select());
 $('numInput').addEventListener('input',syncInputs);
