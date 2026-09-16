@@ -73,7 +73,8 @@ button{cursor:pointer}
 .back-btn{border:0;background:#eef0f2;color:var(--charcoal);font-weight:900;border-radius:12px;padding:10px 13px}
 .list-summary{display:flex;justify-content:space-between;align-items:center;padding:15px 4px 8px;color:#8b9197;font-size:13px;font-weight:800}
 .reception-list{display:flex;flex-direction:column;gap:10px;margin-top:4px}
-.row{display:grid;grid-template-columns:10px 1fr auto;gap:12px;align-items:center;border:1px solid #e2e5e8;border-radius:18px;padding:14px 13px;background:#fff}
+.row{display:grid;grid-template-columns:10px 1fr auto;gap:12px;align-items:center;border:1px solid #e2e5e8;border-radius:18px;padding:14px 13px;background:#fff;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.row:active{transform:scale(.992);background:#f7f8f8}
 .dot{width:10px;height:100%;min-height:54px;border-radius:8px}
 .row-main{min-width:0}
 .row-top{display:flex;align-items:baseline;gap:10px}
@@ -602,6 +603,26 @@ function renderRows(rows){
         <div class="row-dep-label">次回出庫</div>
         <div class="row-dep-time">${shortTime((r.departure_time||'').slice(0,5))}</div>
       </div>`;
+    el.setAttribute('role','button');
+    el.setAttribute('tabindex','0');
+    el.setAttribute('aria-label',`無線番号 ${r.radio_number} を選択`);
+    const selectRow=()=>{
+      state={
+        id:r.id,
+        radioNumber:String(r.radio_number||''),
+        departure:(r.departure_time||'06:30').slice(0,5),
+        status:r.status||'received',
+        receivedAt:r.received_at||null,
+        statusChangedAt:r.status_changed_at||r.received_at||null
+      };
+      render();
+      $('listView').classList.add('hidden');
+      $('displayView').classList.add('hidden');
+      $('editorView').classList.remove('hidden');
+      window.scrollTo(0,0);
+    };
+    el.addEventListener('click',selectRow);
+    el.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();selectRow();}});
     box.appendChild(el);
   });
 }
@@ -666,21 +687,8 @@ $('displayCard').addEventListener('click',()=>{
 $('listBtn').addEventListener('click',showList);
 
 $('backBtn').addEventListener('click',()=>{
-  // 一覧から戻るとき、今日の最新受付をメイン画面へ反映。
-  // dayRows は新しい順なので先頭が最新。
-  if(selectedListDate===todayYmd() && dayRows && dayRows.length){
-    const r=dayRows[0];
-    state={
-      id:r.id,
-      radioNumber:String(r.radio_number||''),
-      departure:(r.departure_time||'06:30').slice(0,5),
-      status:r.status||'received',
-      receivedAt:r.received_at||null,
-      statusChangedAt:r.status_changed_at||r.received_at||null
-    };
-    render();
-  }
   $('listView').classList.add('hidden');
+  $('displayView').classList.add('hidden');
   $('editorView').classList.remove('hidden');
   window.scrollTo(0,0);
 });
