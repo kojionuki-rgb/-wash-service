@@ -187,11 +187,17 @@ button{cursor:pointer}
           </svg>
           <div class="logo-title">洗車サービス</div>
         </div>
-        <button id="listBtn" class="top-action">受付リスト</button>
+        <div style="display:flex;gap:8px;align-items:center">
+  <button id="newBtn" class="top-action" style="background:#303438;color:#fff">＋ 新規受付</button>
+  <button id="listBtn" class="top-action">受付リスト</button>
+</div>
       </div>
     </div>
 
-    <div class="editor-title">受付情報を入力</div>
+    <div class="editor-title" style="display:flex;justify-content:space-between;align-items:center">
+  <span id="modeTitle">新規受付</span>
+  <span id="modeBadge" style="font-size:11px;background:#eef0f1;color:#8b9298;border-radius:999px;padding:5px 8px">NEW</span>
+</div>
     <div class="form-grid">
       <div class="field">
         <label for="numInput">無線番号</label>
@@ -409,6 +415,10 @@ function applyStatus(card,status=state.status){
 }
 
 function render(){
+  const isNew=!state.id;
+  $('modeTitle').textContent=isNew?'新規受付':'既存受付を編集中';
+  $('modeBadge').textContent=isNew?'NEW':'EDIT';
+  $('modeBadge').style.background=isNew?'#eef0f1':'#fff1c7';
   $('numInput').value=state.radioNumber;
   $('depInput').value=state.departure;
   $('editorRadioNumber').textContent=state.radioNumber||'—';
@@ -726,6 +736,15 @@ $('displayCard').addEventListener('click',()=>{
   $('editorView').classList.remove('hidden');
   newReception();
   window.scrollTo(0,0);
+});
+
+$('newBtn').addEventListener('click',()=>{
+  newReception();
+  $('displayView').classList.add('hidden');
+  $('listView').classList.add('hidden');
+  $('editorView').classList.remove('hidden');
+  window.scrollTo(0,0);
+  setTimeout(()=>$('numInput').focus(),80);
 });
 
 $('listBtn').addEventListener('click',showList);
