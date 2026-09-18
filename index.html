@@ -507,9 +507,24 @@ function dateRangeForYmd(ymd){
 }
 
 async function loadDay(ymd){
+  // 予約カレンダーから入った受付は wash_date（洗車予定日）で表示。
+  // 既存データは wash_date が空なので、従来どおり received_at（受付日）で表示する。
   const [start,end]=dateRangeForYmd(ymd);
-  const q=`wash_receptions?select=id,radio_number,departure_time,status,received_at,status_changed_at&received_at=gte.${encodeURIComponent(start)}&received_at=lt.${encodeURIComponent(end)}&order=received_at.desc`;
-  return await api(q,{method:'GET'});
+  const select='id,radio_number,departure_time,status,received_at,status_changed_at,wash_date,memo,seat_cover,amount';
+
+  const booked=await api(
+    `wash_receptions?select=${select}&wash_date=eq.${encodeURIComponent(ymd)}&order=received_at.desc`,
+    {method:'GET'}
+  ) || [];
+
+  const legacy=await api(
+    `wash_receptions?select=${select}&wash_date=is.null&received_at=gte.${encodeURIComponent(start)}&received_at=lt.${encodeURIComponent(end)}&order=received_at.desc`,
+    {method:'GET'}
+  ) || [];
+
+  return [...booked,...legacy].sort((a,b)=>
+    new Date(b.received_at||0)-new Date(a.received_at||0)
+  );
 }
 
 function changeListDate(days){
@@ -588,8 +603,10 @@ function renderListStats(rows){
 
 function renderRows(rows){
   $('countText').textContent=`${rows.length}件`;
-  const billableCount=rows.filter(r=>r.status!=='cancelled').length;
-  $('totalAmount').textContent=`合計 ${(billableCount*1300).toLocaleString('ja-JP')}円`;
+  const total=rows
+    .filter(r=>r.status!=='cancelled')
+    .reduce((sum,r)=>sum+Number(r.amount||1300),0);
+  $('totalAmount').textContent=`合計 ${total.toLocaleString('ja-JP')}円`;
   const box=$('receptionList');
   box.innerHTML='';
 
