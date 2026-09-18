@@ -7,5 +7,33 @@ async function api(path,opt={}){let r=await fetch(U+'/rest/v1/'+path,{...opt,hea
 async function load(){let a=ymd(new Date(cur.getFullYear(),cur.getMonth(),1)),b=ymd(new Date(cur.getFullYear(),cur.getMonth()+1,0));try{let x=await api('wash_available_days?select=wash_date,is_open&wash_date=gte.'+a+'&wash_date=lte.'+b);sel=new Set(x.filter(v=>v.is_open).map(v=>v.wash_date))}catch(e){sel=new Set()}render()}
 function render(){$('mo').textContent=cur.getFullYear()+'年 '+(cur.getMonth()+1)+'月';let f=new Date(cur.getFullYear(),cur.getMonth(),1),l=new Date(cur.getFullYear(),cur.getMonth()+1,0),h='';for(let i=0;i<f.getDay();i++)h+='<span></span>';for(let d=1;d<=l.getDate();d++){let s=ymd(new Date(cur.getFullYear(),cur.getMonth(),d)),on=sel.has(s);h+=`<button class="day ${on?'on':''}" data-d="${s}">${d}${on?'<small>受付可</small>':''}</button>`}$('g').innerHTML=h;document.querySelectorAll('.day').forEach(b=>b.onclick=()=>{sel.has(b.dataset.d)?sel.delete(b.dataset.d):sel.add(b.dataset.d);render()})}
 $('p').onclick=()=>{cur=new Date(cur.getFullYear(),cur.getMonth()-1,1);load()};$('n').onclick=()=>{cur=new Date(cur.getFullYear(),cur.getMonth()+1,1);load()};
-$('save').onclick=async()=>{let a=ymd(new Date(cur.getFullYear(),cur.getMonth(),1)),b=ymd(new Date(cur.getFullYear(),cur.getMonth()+1,0));$('msg').textContent='保存中…';try{await api('wash_available_days?wash_date=gte.'+a+'&wash_date=lte.'+b,{method:'DELETE',headers:{Prefer:'return=minimal'}});if(sel.size)await api('wash_available_days',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify([...sel].map(d=>({wash_date:d,is_open:true,capacity:5})))});$('msg').textContent='保存しました'}catch(e){$('msg').textContent='保存できませんでした'}};load();
+$('save').onclick=async()=>{
+  $('msg').textContent='保存中…';
+  try{
+    const a=ymd(new Date(cur.getFullYear(),cur.getMonth(),1));
+    const b=ymd(new Date(cur.getFullYear(),cur.getMonth()+1,0));
+    const current=await api('wash_available_days?select=wash_date&wash_date=gte.'+a+'&wash_date=lte.'+b);
+    const before=new Set((current||[]).map(x=>x.wash_date));
+    const add=[...sel].filter(d=>!before.has(d));
+    const remove=[...before].filter(d=>!sel.has(d));
+    if(add.length){
+      await api('wash_available_days?on_conflict=wash_date',{
+        method:'POST',
+        headers:{Prefer:'resolution=merge-duplicates,return=minimal'},
+        body:JSON.stringify(add.map(d=>({wash_date:d,is_open:true,capacity:5})))
+      });
+    }
+    for(const d of remove){
+      await api('wash_available_days?wash_date=eq.'+d,{
+        method:'DELETE',
+        headers:{Prefer:'return=minimal'}
+      });
+    }
+    $('msg').textContent='保存しました';
+    await load();
+  }catch(e){
+    console.error(e);
+    $('msg').textContent='保存できませんでした';
+  }
+};load();
 </script></body></html>
