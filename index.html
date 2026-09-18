@@ -297,6 +297,13 @@ button{cursor:pointer}
       <span><span id="countText">0件</span><span id="totalAmount" style="margin-left:10px;color:#a7adb2;font-size:13px;font-weight:700">合計 0円</span></span>
       <span>新しい順</span>
     </div>
+    <div id="bulkBar" style="display:flex;align-items:center;gap:10px;margin:8px 0 12px">
+      <label style="display:flex;align-items:center;gap:7px;font-size:13px;font-weight:800;cursor:pointer">
+        <input id="selectAllRows" type="checkbox" style="width:19px;height:19px"> すべて選択
+      </label>
+      <span id="selectedCount" style="font-size:13px;color:#8b9298;font-weight:800">0件選択</span>
+      <button id="bulkDeleteBtn" type="button" disabled style="margin-left:auto;border:1px solid #f0b9b9;border-radius:11px;padding:9px 12px;background:#fff5f5;color:#c43b3b;font-weight:900;opacity:.45">選択を削除</button>
+    </div>
     <div id="receptionList" class="reception-list"></div>
   </section>
 </main>
@@ -346,6 +353,7 @@ let state={
 
 let selectedListDate=todayYmd();
 let dayRows=[];
+let selectedRowIds=new Set();
 
 function saveLocal(){
   local.departure=state.departure;
@@ -551,6 +559,9 @@ async function showList(){
 }
 
 async function refreshList(){
+  selectedRowIds.clear();
+  if($('selectAllRows')) $('selectAllRows').checked=false;
+  updateBulkControls();
   $('listDate').textContent=jpDateFromYmd(selectedListDate);
   $('receptionList').innerHTML='<div class="empty">読み込み中…</div>';
 
@@ -601,6 +612,41 @@ function renderListStats(rows){
   `;
 }
 
+function updateBulkControls(){
+  const n=selectedRowIds.size;
+  if($('selectedCount')) $('selectedCount').textContent=`${n}件選択`;
+  if($('bulkDeleteBtn')){
+    $('bulkDeleteBtn').disabled=n===0;
+    $('bulkDeleteBtn').style.opacity=n===0?'.45':'1';
+  }
+}
+
+async function deleteSelectedRows(){
+  const ids=[...selectedRowIds];
+  if(!ids.length) return;
+  if(!confirm(`選択した ${ids.length}件の受付を削除しますか？\nこの操作は元に戻せません。`)) return;
+  const btn=$('bulkDeleteBtn');
+  btn.disabled=true;
+  btn.textContent='削除中…';
+  try{
+    for(const id of ids){
+      await api(`wash_receptions?id=eq.${encodeURIComponent(id)}`,{
+        method:'DELETE',
+        headers:{'Prefer':'return=minimal'}
+      });
+    }
+    selectedRowIds.clear();
+    await refreshList();
+  }catch(err){
+    console.error(err);
+    alert('一括削除できませんでした。通信状態を確認してください。');
+    updateBulkControls();
+  }finally{
+    btn.textContent='選択を削除';
+    updateBulkControls();
+  }
+}
+
 function renderRows(rows){
   $('countText').textContent=`${rows.length}件`;
   const total=rows
@@ -619,10 +665,33 @@ function renderRows(rows){
     const wrap=document.createElement('div');
     wrap.style.marginBottom='10px';
 
+    const rowLine=document.createElement('div');
+    rowLine.style.display='flex';
+    rowLine.style.alignItems='center';
+    rowLine.style.gap='9px';
+
+    const check=document.createElement('input');
+    check.type='checkbox';
+    check.className='bulk-row-check';
+    check.dataset.id=r.id;
+    check.style.width='20px';
+    check.style.height='20px';
+    check.style.flex='0 0 auto';
+    check.checked=selectedRowIds.has(r.id);
+    check.addEventListener('click',e=>e.stopPropagation());
+    check.addEventListener('change',()=>{
+      if(check.checked) selectedRowIds.add(r.id);
+      else selectedRowIds.delete(r.id);
+      const visible=[...document.querySelectorAll('.bulk-row-check')];
+      $('selectAllRows').checked=visible.length>0 && visible.every(c=>c.checked);
+      updateBulkControls();
+    });
+
     const el=document.createElement('button');
     el.type='button';
     el.className='row';
     el.style.width='100%';
+    el.style.flex='1';
     el.style.textAlign='left';
     el.style.font='inherit';
     el.style.color='inherit';
@@ -716,7 +785,9 @@ function renderRows(rows){
       });
     });
 
-    wrap.appendChild(el);
+    rowLine.appendChild(check);
+    rowLine.appendChild(el);
+    wrap.appendChild(rowLine);
     wrap.appendChild(actions);
     box.appendChild(wrap);
   });
@@ -804,6 +875,17 @@ $('listDateInput').addEventListener('change',()=>{
   selectedListDate=$('listDateInput').value;
   refreshList();
 });
+
+$('selectAllRows').addEventListener('change',()=>{
+  const checks=[...document.querySelectorAll('.bulk-row-check')];
+  checks.forEach(c=>{
+    c.checked=$('selectAllRows').checked;
+    if(c.checked) selectedRowIds.add(c.dataset.id);
+    else selectedRowIds.delete(c.dataset.id);
+  });
+  updateBulkControls();
+});
+$('bulkDeleteBtn').addEventListener('click',deleteSelectedRows);
 
 $('searchInput').addEventListener('input',applyListFilters);
 $('statusFilter').addEventListener('change',applyListFilters);
