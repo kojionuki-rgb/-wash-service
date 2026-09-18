@@ -654,7 +654,8 @@ function renderRows(rows){
       <button type="button" data-s="received" style="border:0;border-radius:13px;padding:13px 8px;background:#ddf8e2;font-weight:900;font-size:14px">受付</button>
       <button type="button" data-s="paid" style="border:0;border-radius:13px;padding:13px 8px;background:#dff2ff;font-weight:900;font-size:14px">支払い済み</button>
       <button type="button" data-s="unpaid" style="border:0;border-radius:13px;padding:13px 8px;background:#fff4bd;font-weight:900;font-size:14px">未収</button>
-      <button type="button" data-s="cancelled" style="border:0;border-radius:13px;padding:13px 8px;background:#ffd6e3;font-weight:900;font-size:14px">キャンセル</button>`;
+      <button type="button" data-s="cancelled" style="border:0;border-radius:13px;padding:13px 8px;background:#ffd6e3;font-weight:900;font-size:14px">キャンセル</button>
+      <button type="button" data-delete="1" style="grid-column:1/-1;border:1px solid #f0b9b9;border-radius:13px;padding:13px 8px;background:#fff5f5;color:#c43b3b;font-weight:900;font-size:14px">この受付を削除</button>`;
 
     el.addEventListener('click',()=>{
       const open=actions.style.display==='grid';
@@ -662,6 +663,27 @@ function renderRows(rows){
       actions.style.display=open?'none':'grid';
     });
     actions.classList.add('list-inline-actions');
+
+    const deleteBtn=actions.querySelector('[data-delete]');
+    deleteBtn.addEventListener('click',async e=>{
+      e.stopPropagation();
+      if(!confirm(`無線番号 ${r.radio_number} の受付を削除しますか？\nこの操作は元に戻せません。`)) return;
+      deleteBtn.disabled=true;
+      deleteBtn.textContent='削除中…';
+      try{
+        await api(`wash_receptions?id=eq.${encodeURIComponent(r.id)}`,{
+          method:'DELETE',
+          headers:{'Prefer':'return=minimal'}
+        });
+        if(state.id===r.id) newReception();
+        await refreshList();
+      }catch(err){
+        console.error(err);
+        alert('削除できませんでした。Supabaseの削除権限を確認してください。');
+        deleteBtn.disabled=false;
+        deleteBtn.textContent='この受付を削除';
+      }
+    });
 
     actions.querySelectorAll('[data-s]').forEach(btn=>{
       btn.addEventListener('click',async e=>{
