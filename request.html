@@ -13,7 +13,7 @@
 <label class="option"><input id="cover" type="checkbox"><span><b>シートカバー交換</b><br><span style="color:#999;font-size:12px">＋200円</span></span></label>
 <div class="price"><span>料金</span><span id="price">1,300円</span></div>
 <button id="send" class="send">洗車を依頼する</button>
-</div><div id="ok" class="ok"></div><div id="err" class="err">登録できませんでした。通信状態を確認してください。</div>
+</div><div id="ok" class="ok"></div><div id="err" class="err"></div>
 <div class="note">受付可能日は管理者のカレンダー設定と連動します。</div></div></div>
 <script>
 const U='https://vqokuktwqrhxsvkwgyug.supabase.co',K='sb_publishable_dMrMp7HYQNxF0KlxrJHEPA_NJBgXR4n',$=x=>document.getElementById(x);let cur=new Date(),slots=[],selected=null;
@@ -24,6 +24,45 @@ function render(){$('month').textContent=cur.getFullYear()+'年 '+(cur.getMonth(
 function choose(d,open){selected=d;$('ok').classList.remove('on');$('err').classList.remove('on');if(open){$('status').className='status open';$('status').textContent=d+'　受付できます';$('form').classList.add('on')}else{$('status').className='status';$('status').textContent=d+'　お休み／受付していません';$('form').classList.remove('on')}render()}
 $('prev').onclick=()=>{cur=new Date(cur.getFullYear(),cur.getMonth()-1,1);selected=null;$('form').classList.remove('on');load()};$('next').onclick=()=>{cur=new Date(cur.getFullYear(),cur.getMonth()+1,1);selected=null;$('form').classList.remove('on');load()};
 $('cover').onchange=()=>$('price').textContent=$('cover').checked?'1,500円':'1,300円';
-$('send').onclick=async()=>{let n=$('radio').value.trim(),dep=$('dep').value,memo=$('memo').value.trim(),cover=$('cover').checked;if(!n){$('radio').focus();return}let now=new Date().toISOString(),amount=1300+(cover?200:0),b=$('send');b.disabled=true;b.textContent='登録中…';try{await api('wash_receptions',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify({radio_number:n,departure_time:dep,status:'received',received_at:now,status_changed_at:now,wash_date:selected,memo:memo,seat_cover:cover,amount:amount})});$('ok').textContent='無線番号 '+n+' の洗車依頼を受け付けました';$('ok').classList.add('on');$('radio').value='';$('memo').value='';$('cover').checked=false;$('price').textContent='1,300円'}catch(e){console.error(e);$('err').classList.add('on')}finally{b.disabled=false;b.textContent='洗車を依頼する'}};
+$('send').onclick=async()=>{
+  let n=$('radio').value.trim(),dep=$('dep').value,memo=$('memo').value.trim(),cover=$('cover').checked;
+  $('ok').classList.remove('on');$('err').classList.remove('on');
+  if(!n){$('radio').focus();return}
+  if(!dep){$('dep').focus();return}
+  let now=new Date().toISOString(),amount=1300+(cover?200:0),b=$('send');
+  b.disabled=true;b.textContent='登録中…';
+  try{
+    let payload={
+      radio_number:n,
+      departure_time:dep.length===5?dep+':00':dep,
+      status:'received',
+      received_at:now,
+      status_changed_at:now,
+      wash_date:selected,
+      memo:memo||'',
+      seat_cover:!!cover,
+      amount:amount
+    };
+    await api('wash_receptions',{
+      method:'POST',
+      headers:{Prefer:'return=minimal'},
+      body:JSON.stringify(payload)
+    });
+    $('ok').textContent='無線番号 '+n+' の洗車依頼を受け付けました';
+    $('ok').classList.add('on');
+    $('radio').value='';$('memo').value='';$('cover').checked=false;$('price').textContent='1,300円';
+  }catch(e){
+    console.error(e);
+    let msg=String(e.message||e);
+    try{
+      let j=JSON.parse(msg);
+      msg=j.message||j.details||j.hint||msg;
+    }catch(_){}
+    $('err').textContent='登録できませんでした：'+msg;
+    $('err').classList.add('on');
+  }finally{
+    b.disabled=false;b.textContent='洗車を依頼する';
+  }
+};
 load();
 </script></body></html>
