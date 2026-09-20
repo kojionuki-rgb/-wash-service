@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<title>RideLog Pilot v1.5</title>
+<title>RideLog Pilot v1.6</title>
 <style>
 :root{
   --bg:#f4f6f8;--card:#ffffff;--ink:#17202a;--muted:#6b7280;
@@ -82,6 +82,11 @@ html[data-theme="dark"] .btn.light:disabled{
 .breakdown div{border:1px solid var(--line);border-radius:14px;padding:12px;background:#fafbfc}
 .breakdown span{display:block;font-size:12px;font-weight:700;color:var(--muted)}
 .breakdown b{display:block;font-size:24px;margin-top:4px}
+.breakdown .cat-count{font-size:14px;font-weight:700;color:var(--muted);margin-left:8px}
+.missing{display:inline-block;border:2px solid #dc2626;color:#dc2626;border-radius:6px;padding:1px 5px;font-weight:800;background:rgba(220,38,38,.05)}
+.top-dock .dock-btn{transition:transform .16s ease,opacity .16s ease}
+.top-dock .dock-btn.next-action{transform:scale(1)}
+.top-dock .dock-btn.past-action{transform:scale(.88)}
 
 .summary{grid-template-columns:repeat(4,1fr)}
 .stat span{font-size:12px;font-weight:700;color:var(--muted)}
@@ -353,7 +358,7 @@ html[data-theme="dark"] .badge.type-other{background:#4b5563;color:#fff}
 <body>
 <div class="app">
 <header>
-  <div><h1>乗務日報 <small>PILOT v1.5</small></h1><div class="muted">プロドライバー向け</div><button class="release-link no-print" onclick="releaseDialog.showModal()">リリースノート</button></div>
+  <div><h1>乗務日報 <small>PILOT v1.6</small></h1><div class="muted">プロドライバー向け</div><button class="release-link no-print" onclick="releaseDialog.showModal()">リリースノート</button></div>
   <div style="display:flex;gap:8px;align-items:center"><button id="themeBtn" class="theme-toggle no-print" onclick="cycleTheme()" aria-label="表示モード切替" title="表示モード切替">🌓</button><button class="btn light no-print" onclick="newDay()">新しい日</button></div>
 </header>
 
@@ -378,9 +383,9 @@ html[data-theme="dark"] .badge.type-other{background:#4b5563;color:#fff}
     </div>
   </div>
   <div class="breakdown">
-    <div><span>Uber</span><b id="uberFare">¥0</b></div>
-    <div><span>GO</span><b id="goFare">¥0</b></div>
-    <div><span>その他</span><b id="otherFare">¥0</b></div>
+    <div><span>Uber</span><b id="uberFare">¥0 <small id="uberCount" class="cat-count">0回</small></b></div>
+    <div><span>手上げ</span><b id="handFare">¥0 <small id="handCount" class="cat-count">0回</small></b></div>
+    <div><span>その他</span><b id="otherFare">¥0 <small id="otherCount" class="cat-count">0回</small></b></div>
   </div>
 </section>
 
@@ -437,7 +442,7 @@ html[data-theme="dark"] .badge.type-other{background:#4b5563;color:#fff}
     <h2>乗車入力</h2>
     <div id="status" class="status">待機中</div>
     <div class="form">
-      <div class="field"><label>乗車種別</label><select id="type" onchange="applyTypeSelectColor(this);save()"><option value="Uber">⬛ Uber</option><option value="手上げ">🟪 手上げ</option><option value="駅">🟩 駅</option><option value="ホテル">🟨 ホテル</option><option value="空港">🟦 空港</option><option value="GO">🟦 GO</option><option value="DiDi">🟧 DiDi</option><option value="ハイヤー">⬜ ハイヤー</option><option value="その他">◼︎ その他</option></select></div>
+      <div class="field"><label>乗車種別</label><select id="type" onchange="applyTypeSelectColor(this);save()"><option value="Uber">⬛ Uber</option><option value="手上げ">🟪 手上げ</option><option value="駅、乗り場">🟩 駅、乗り場</option><option value="ホテル">🟨 ホテル</option><option value="空港">🟦 空港</option><option value="GO">🟦 GO</option><option value="DiDi">🟧 DiDi</option><option value="ハイヤー">⬜ ハイヤー</option><option value="その他">◼︎ その他</option></select></div>
       <div class="field"><label>人数</label><select id="pax"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option></select></div>
       <div class="field full"><label>乗車地</label><input id="pickup" placeholder="例：高円寺"></div>
       <div class="field full"><label>降車地</label><input id="dropoff" placeholder="例：丸の内"></div>
@@ -534,15 +539,15 @@ html[data-theme="dark"] .badge.type-other{background:#4b5563;color:#fff}
 
 <dialog id="releaseDialog">
 <div class="dialog release-notes">
-  <div class="version">RideLog Pilot v1.5</div>
+  <div class="version">RideLog Pilot v1.6</div>
   <div class="muted">2026.09.20</div>
   <h3>今回の改善</h3>
   <ul>
-    <li>個人タクシー向け「運転日報」PDF／印刷テンプレートを追加</li>
-    <li>回数・人員・乗車地・降車地・降車時刻・運賃額をRideLogから自動転記</li>
-    <li>営業回数・営業収入・乗車人数を自動集計</li>
-    <li>睡眠時間・免許期限・車検・メーター・燃料など日報固有項目を追加入力可能に</li>
-    <li>従来のRideLog PDFもそのまま利用可能</li>
+    <li>ホーム内訳を「Uber／手上げ／その他」に変更し、各金額の右側に合計回数を表示</li>
+    <li>乗車種別「駅」を「駅、乗り場」に変更</li>
+    <li>本日の乗車記録で未入力項目を赤枠表示</li>
+    <li>乗車中は「乗車」、待機中は「降車」ボタンを一回り縮小し、次に押すボタンを明確化</li>
+    <li>v1.5の個人タクシー運転日報機能を継続</li>
   </ul>
   <div class="toolbar" style="justify-content:flex-end">
     <button class="btn light" onclick="releaseDialog.close()">閉じる</button>
@@ -583,7 +588,7 @@ html[data-theme="dark"] .badge.type-other{background:#4b5563;color:#fff}
   <div class="form">
     <div class="field"><label>乗車種別</label>
       <select id="iType" onchange="applyTypeSelectColor(this)">
-        <option value="Uber">⬛ Uber</option><option value="手上げ">🟪 手上げ</option><option value="駅">🟩 駅</option><option value="ホテル">🟨 ホテル</option><option value="空港">🟦 空港</option><option value="GO">🟦 GO</option><option value="DiDi">🟧 DiDi</option><option value="ハイヤー">⬜ ハイヤー</option><option value="その他">◼︎ その他</option>
+        <option value="Uber">⬛ Uber</option><option value="手上げ">🟪 手上げ</option><option value="駅、乗り場">🟩 駅、乗り場</option><option value="ホテル">🟨 ホテル</option><option value="空港">🟦 空港</option><option value="GO">🟦 GO</option><option value="DiDi">🟧 DiDi</option><option value="ハイヤー">⬜ ハイヤー</option><option value="その他">◼︎ その他</option>
       </select>
     </div>
     <div class="field"><label>人数</label><select id="iPax"><option value="1">1名</option><option value="2">2名</option><option value="3">3名</option><option value="4">4名</option><option value="5">5名</option><option value="6">6名</option><option value="7">7名</option><option value="8">8名</option></select></div>
@@ -610,7 +615,7 @@ html[data-theme="dark"] .badge.type-other{background:#4b5563;color:#fff}
     <div class="field full"><label>降車地</label><input id="eDropoff" autocomplete="off"></div>
     <div class="field"><label>乗車種別</label>
       <select id="eType" onchange="applyTypeSelectColor(this)">
-        <option value="Uber">⬛ Uber</option><option value="手上げ">🟪 手上げ</option><option value="駅">🟩 駅</option><option value="ホテル">🟨 ホテル</option><option value="空港">🟦 空港</option><option value="GO">🟦 GO</option><option value="DiDi">🟧 DiDi</option><option value="ハイヤー">⬜ ハイヤー</option><option value="その他">◼︎ その他</option>
+        <option value="Uber">⬛ Uber</option><option value="手上げ">🟪 手上げ</option><option value="駅、乗り場">🟩 駅、乗り場</option><option value="ホテル">🟨 ホテル</option><option value="空港">🟦 空港</option><option value="GO">🟦 GO</option><option value="DiDi">🟧 DiDi</option><option value="ハイヤー">⬜ ハイヤー</option><option value="その他">◼︎ その他</option>
       </select>
     </div>
     <div class="field"><label>人数</label><select id="ePax"><option value="1">1名</option><option value="2">2名</option><option value="3">3名</option><option value="4">4名</option><option value="5">5名</option><option value="6">6名</option><option value="7">7名</option><option value="8">8名</option></select></div>
@@ -645,7 +650,7 @@ const yen=n=>'¥'+Number(n||0).toLocaleString('ja-JP');
 function typeClass(type){
   return ({
     'Uber':'type-uber','GO':'type-go','DiDi':'type-didi','手上げ':'type-hand',
-    '空港':'type-airport','駅':'type-station','ホテル':'type-hotel','ハイヤー':'type-hire','その他':'type-other'
+    '空港':'type-airport','駅':'type-station','駅、乗り場':'type-station','ホテル':'type-hotel','ハイヤー':'type-hire','その他':'type-other'
   })[type]||'type-other';
 }
 function applyTypeSelectColor(el){
@@ -714,9 +719,12 @@ function render(){
   const toll=state.trips.reduce((a,t)=>a+t.toll,0);
   const pax=state.trips.reduce((a,t)=>a+t.pax,0);
   const count=state.trips.length;
-  const uber=state.trips.filter(t=>t.type==='Uber').reduce((a,t)=>a+t.fare,0);
-  const go=state.trips.filter(t=>t.type==='GO').reduce((a,t)=>a+t.fare,0);
-  const other=fare-uber-go;
+  const uberTrips=state.trips.filter(t=>t.type==='Uber');
+  const handTrips=state.trips.filter(t=>t.type==='手上げ');
+  const uber=uberTrips.reduce((a,t)=>a+t.fare,0);
+  const hand=handTrips.reduce((a,t)=>a+t.fare,0);
+  const other=fare-uber-hand;
+  const otherCount=count-uberTrips.length-handTrips.length;
   const goal=Number(state.meta.goal||0);
   const rate=goal>0?Math.min(100,Math.round(fare/goal*100)):0;
   $('sFare').textContent=yen(fare); $('sToll').textContent=yen(toll);
@@ -724,9 +732,12 @@ function render(){
   $('dockFare').textContent=yen(fare);
   $('dockCount').textContent=count;
   $('avgFare').textContent=yen(count?Math.round(fare/count):0);
-  $('uberFare').textContent=yen(uber);
-  $('goFare').textContent=yen(go);
-  $('otherFare').textContent=yen(other);
+  $('uberFare').childNodes[0].nodeValue=yen(uber)+' ';
+  $('uberCount').textContent=uberTrips.length+'回';
+  $('handFare').childNodes[0].nodeValue=yen(hand)+' ';
+  $('handCount').textContent=handTrips.length+'回';
+  $('otherFare').childNodes[0].nodeValue=yen(other)+' ';
+  $('otherCount').textContent=otherCount+'回';
   $('progressBar').style.width=rate+'%';
   $('progressText').textContent=goal>0?`目標 ${yen(goal)}／達成率 ${rate}%`:'目標未設定';
   $('remainingText').textContent=goal>0?(fare>=goal?`目標達成 +${yen(fare-goal)}`:`あと ${yen(goal-fare)}`):'';
@@ -734,8 +745,12 @@ function render(){
   $('status').textContent=state.active?`乗車中　${state.active.start}／${state.active.pickup||'乗車地未入力'}`:'待機中';
   $('startBtn').disabled=!!state.active;
   $('finishBtn').disabled=!state.active;
-  $('startBtn').style.opacity=state.active?'.45':'1';
-  $('finishBtn').style.opacity=state.active?'1':'.55';
+  $('startBtn').style.opacity=state.active?'.62':'1';
+  $('finishBtn').style.opacity=state.active?'1':'.62';
+  $('startBtn').classList.toggle('past-action',!!state.active);
+  $('startBtn').classList.toggle('next-action',!state.active);
+  $('finishBtn').classList.toggle('past-action',!state.active);
+  $('finishBtn').classList.toggle('next-action',!!state.active);
   const list=$('tripList');
   if(!state.trips.length){
     list.innerHTML='<div class="empty">まだ乗車記録がありません。</div>';
@@ -749,11 +764,11 @@ function render(){
         <div class="trip">
           <div class="badge ${typeClass(t.type)}">${escapeHtml(t.type)}</div>
           <div>
-            <div class="route">${escapeHtml(t.pickup||'未入力')} → ${escapeHtml(t.dropoff||'未入力')}</div>
-            <div class="meta">${escapeHtml(t.start||'--:--')}–${escapeHtml(t.end||'--:--')}／${Number(t.pax||1)}名／高速 ${yen(t.toll)}</div>
+            <div class="route">${missingText(t.pickup)} → ${missingText(t.dropoff)}</div>
+            <div class="meta">${missingText(t.start)}–${missingText(t.end)}／${t.pax?Number(t.pax)+'名':'<span class="missing">未入力</span>'}／高速 ${yen(t.toll)}</div>
             ${t.note?`<div class="meta">${escapeHtml(t.note)}</div>`:''}
           </div>
-          <div class="fare">${yen(t.fare)}<div>
+          <div class="fare">${missingFare(t.fare)}<div>
             <button class="iconbtn no-print" onclick="editTrip(${i})">修正</button>
             <button class="iconbtn no-print" onclick="deleteTrip(${i})">削除</button>
           </div></div>
@@ -762,6 +777,8 @@ function render(){
       <div class="insert-wrap"><button class="insert-btn no-print" onclick="openInsertDialog(${i+1})">＋ この後に追加</button></div>
     </div>`).join('');
 }
+function missingText(v,label='未入力'){return (v===undefined||v===null||String(v).trim()==='')?'<span class="missing">未入力</span>':escapeHtml(v)}
+function missingFare(v){return Number(v||0)>0?yen(v):'<span class="missing">未入力</span>'}
 function escapeHtml(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
 function deleteTrip(i){if(confirm('この記録を削除しますか？')){state.trips.splice(i,1);save()}}
 
