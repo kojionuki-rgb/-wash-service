@@ -1,0 +1,1023 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>RideLog Pilot v1.6</title>
+<style>
+:root{
+  --bg:#f4f6f8;--card:#ffffff;--ink:#17202a;--muted:#6b7280;
+  --line:#d9e0e7;--navy:#102030;--green:#167c68;--red:#dc2626;
+  --shadow:0 8px 24px rgba(16,32,48,.08);--radius:18px;--blue:#0A66D8;--stop:#C62828
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);
+font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue","Hiragino Sans","Yu Gothic",sans-serif;font-weight:400}
+button,input,select,textarea{font:inherit}
+button{cursor:pointer}
+.app{max-width:1180px;margin:auto;padding:calc(14px + env(safe-area-inset-top)) 14px calc(86px + env(safe-area-inset-bottom))}
+header{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:14px}
+h1{margin:0;font-size:clamp(23px,3vw,34px)}
+small,.muted{color:var(--muted)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+box-shadow:var(--shadow);padding:16px}
+.grid{display:grid;gap:14px}
+
+html[data-theme="dark"]{
+  --bg:#111315;
+  --card:#1b1f23;
+  --ink:#f5f7fa;
+  --muted:#a8b0ba;
+  --line:#30363d;
+  --navy:#dbe7f3;
+  --shadow:0 10px 28px rgba(0,0,0,.32)
+}
+html[data-theme="dark"] input,
+html[data-theme="dark"] select,
+html[data-theme="dark"] textarea{
+  background:#15191d;
+  color:var(--ink);
+  border-color:var(--line)
+}
+html[data-theme="dark"] .status{background:#242a30;color:#c8d0d8}
+html[data-theme="dark"] .status.active{background:#12382f;color:#b8f2df}
+html[data-theme="dark"] .breakdown div,
+html[data-theme="dark"] .badge{background:#20252a}
+
+html[data-theme="dark"] .btn.light,
+html[data-theme="dark"] .theme-toggle{
+  background:#f5f7fa;
+  color:#111315;
+  border-color:#f5f7fa;
+}
+html[data-theme="dark"] .btn.light:disabled{
+  background:#3a4047;
+  color:#9aa3ad;
+  border-color:#3a4047;
+}
+.theme-toggle{
+  border:1px solid var(--line);
+  background:var(--card);
+  color:var(--ink);
+  border-radius:999px;
+  width:46px;
+  height:46px;
+  padding:0;
+  display:grid;
+  place-items:center;
+  font-size:22px;
+  line-height:1
+}
+
+
+.sales-hero{display:grid;grid-template-columns:1.4fr 1fr;gap:18px;align-items:center;margin-bottom:14px}
+.hero-label{font-size:14px;font-weight:800;color:var(--muted)}
+.hero-value{font-size:clamp(42px,8vw,76px);font-weight:900;letter-spacing:-.04em;line-height:1.05;margin:4px 0 14px}
+.progress-wrap{max-width:680px}
+.progress-track{height:14px;background:#e8edf2;border-radius:999px;overflow:hidden}
+.progress-bar{height:100%;width:0;background:var(--green);transition:width .25s ease}
+.progress-text{display:flex;justify-content:space-between;gap:12px;font-size:13px;font-weight:800;color:#475467;margin-top:7px}
+.breakdown{display:grid;gap:10px}
+.breakdown div{border:1px solid var(--line);border-radius:14px;padding:12px;background:#fafbfc}
+.breakdown span{display:block;font-size:12px;font-weight:700;color:var(--muted)}
+.breakdown b{display:block;font-size:24px;margin-top:4px}
+.breakdown .cat-count{font-size:14px;font-weight:700;color:var(--muted);margin-left:8px}
+.missing{display:inline-block;border:2px solid #dc2626;color:#dc2626;border-radius:6px;padding:1px 5px;font-weight:800;background:rgba(220,38,38,.05)}
+.top-dock .dock-btn{transition:transform .16s ease,opacity .16s ease}
+.top-dock .dock-btn.next-action{transform:scale(1)}
+.top-dock .dock-btn.past-action{transform:scale(.88)}
+
+.summary{grid-template-columns:repeat(4,1fr)}
+.stat span{font-size:12px;font-weight:700;color:var(--muted)}
+.stat b{display:block;font-size:clamp(24px,4vw,38px);margin-top:5px}
+.main{grid-template-columns:minmax(310px,.9fr) minmax(440px,1.5fr);align-items:start;margin-top:14px}
+h2{font-size:18px;margin:0 0 12px}
+.form{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.field{display:flex;flex-direction:column;gap:6px}
+.full{grid-column:1/-1}
+label{font-size:12px;font-weight:700;color:var(--muted)}
+input,select,textarea{width:100%;border:1px solid var(--line);border-radius:12px;background:#fff;
+padding:12px 13px;min-height:46px}
+textarea{min-height:72px;resize:vertical}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.btn{border:0;border-radius:13px;padding:13px 14px;font-weight:800}
+.primary{background:var(--blue);color:#fff}
+.success{background:var(--stop);color:#fff}
+.light{background:#eef2f5;color:var(--ink)}
+.danger{background:#fee4e2;color:var(--red)}
+.status{margin-bottom:12px;border-radius:12px;padding:10px 12px;background:#eef2f5;
+color:#475467;font-size:13px;font-weight:800}
+.status.active{background:#e7f6f1;color:#11614f}
+.list{display:flex;flex-direction:column;gap:10px}
+.trip{display:grid;grid-template-columns:72px 1fr auto;gap:10px;align-items:center;
+border:1px solid var(--line);border-radius:14px;padding:12px}
+.badge{background:#eef2ff;border-radius:10px;padding:8px;text-align:center;font-weight:900;font-size:12px}
+.route{font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.meta{font-size:12px;color:var(--muted);margin-top:3px}
+.fare{text-align:right;font-weight:900}
+.iconbtn{border:0;background:#f3f5f7;border-radius:9px;padding:7px 9px;margin-left:4px}
+.empty{text-align:center;color:var(--muted);padding:28px 8px}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.toolbar .btn{font-size:13px;padding:10px 12px}
+.bottom{position:fixed;left:50%;bottom:0;transform:translateX(-50%);width:min(100%,1180px);
+background:rgba(255,255,255,.94);backdrop-filter:blur(14px);border-top:1px solid var(--line);
+display:grid;grid-template-columns:repeat(4,1fr);padding:8px 10px calc(8px + env(safe-area-inset-bottom));z-index:10}
+.nav{border:0;background:transparent;padding:8px;font-weight:800;color:#667085}
+.nav.active{color:var(--green)}
+dialog{border:0;border-radius:18px;width:min(92vw,560px);padding:0;box-shadow:0 24px 70px rgba(0,0,0,.25)}
+dialog::backdrop{background:rgba(0,0,0,.42)}
+.dialog{padding:18px}
+
+.actions{
+  position:fixed;
+  z-index:9999;
+  right:18px;
+  top:50%;
+  transform:translateY(-50%);
+  width:176px;
+  display:grid;
+  grid-template-columns:1fr;
+  gap:12px;
+  margin:0;
+  padding:12px;
+  background:rgba(255,255,255,.94);
+  border:1px solid var(--line);
+  border-radius:18px;
+  box-shadow:0 16px 40px rgba(16,32,48,.18);
+  backdrop-filter:blur(14px)
+}
+.actions .btn{min-height:104px;font-size:clamp(24px,2.6vw,34px);font-weight:500;line-height:1;letter-spacing:.02em;text-shadow:none;box-shadow:0 10px 24px rgba(16,32,48,.20);display:flex;flex-direction:row;align-items:center;justify-content:center;gap:10px;border-radius:14px;color:#fff}
+.btn:disabled{opacity:.48;cursor:not-allowed;filter:grayscale(.15);text-shadow:none;box-shadow:none}
+
+.action-icon{font-size:1em;line-height:1}
+
+.main{padding-right:204px}
+
+@media(max-width:820px){.summary{grid-template-columns:1fr 1fr}.main{grid-template-columns:1fr;padding-right:0}.sales-hero{grid-template-columns:1fr}.actions{left:auto;right:10px;top:50%;bottom:auto;transform:translateY(-50%);width:118px;grid-template-columns:1fr;padding:8px;border-radius:16px}.actions .btn{min-height:92px;font-size:25px;flex-direction:row;gap:8px}.main{padding-right:126px}}
+@media(max-width:500px){
+  .app{padding-left:10px;padding-right:10px;padding-bottom:180px}.card{padding:13px}.form{grid-template-columns:1fr}
+  .full{grid-column:auto}.actions{grid-template-columns:1fr}.trip{grid-template-columns:64px 1fr}.fare{grid-column:2;text-align:left}
+}
+
+
+/* v1.1: 乗車種別カラー */
+.badge.type-uber{background:#111;color:#fff}
+.badge.type-go{background:#1565c0;color:#fff}
+.badge.type-didi{background:#f57c00;color:#fff}
+.badge.type-hand{background:#7b2cbf;color:#fff}
+.badge.type-airport{background:#38bdf8;color:#071923}
+.badge.type-hotel{background:#f4c542;color:#111}
+
+.badge.type-station{background:#16a34a;color:#fff}
+select.type-station{background:#16a34a;color:#fff}
+html[data-theme="dark"] select.type-station{background:#16a34a;color:#fff;border-color:#4ade80}
+html[data-theme="dark"] .badge.type-station{background:#16a34a;color:#fff}
+
+.badge.type-hire{background:#546e7a;color:#fff}
+.badge.type-other{background:#6b7280;color:#fff}
+select.type-uber{background:#111;color:#fff}
+select.type-go{background:#1565c0;color:#fff}
+select.type-didi{background:#f57c00;color:#fff}
+select.type-hand{background:#7b2cbf;color:#fff}
+select.type-airport{background:#38bdf8;color:#071923}
+select.type-hotel{background:#f4c542;color:#111}
+select.type-hire{background:#546e7a;color:#fff}
+
+/* v1.1: ナイトモードでも乗車種別カラーを維持 */
+html[data-theme="dark"] select.type-uber{background:#111;color:#fff;border-color:#3f4852}
+html[data-theme="dark"] select.type-go{background:#1565c0;color:#fff;border-color:#4f8bd8}
+html[data-theme="dark"] select.type-didi{background:#f57c00;color:#fff;border-color:#ff9b3d}
+html[data-theme="dark"] select.type-hand{background:#7b2cbf;color:#fff;border-color:#9a55d0}
+html[data-theme="dark"] select.type-airport{background:#38bdf8;color:#071923;border-color:#7dd3fc}
+html[data-theme="dark"] select.type-hotel{background:#f4c542;color:#111;border-color:#ffe174}
+html[data-theme="dark"] select.type-hire{background:#6b7280;color:#fff;border-color:#8f96a3}
+html[data-theme="dark"] select.type-other{background:#4b5563;color:#fff;border-color:#6b7280}
+
+html[data-theme="dark"] .badge.type-uber{background:#111;color:#fff}
+html[data-theme="dark"] .badge.type-go{background:#1565c0;color:#fff}
+html[data-theme="dark"] .badge.type-didi{background:#f57c00;color:#fff}
+html[data-theme="dark"] .badge.type-hand{background:#7b2cbf;color:#fff}
+html[data-theme="dark"] .badge.type-airport{background:#38bdf8;color:#071923}
+html[data-theme="dark"] .badge.type-hotel{background:#f4c542;color:#111}
+html[data-theme="dark"] .badge.type-hire{background:#6b7280;color:#fff}
+html[data-theme="dark"] .badge.type-other{background:#4b5563;color:#fff}
+
+.settings-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.settings-row select{max-width:230px}
+.wake-status{font-size:12px;color:var(--muted);margin-top:6px}
+.edit-time-details{margin-top:10px;border-top:1px solid var(--line);padding-top:10px}
+.edit-time-details summary{cursor:pointer;color:var(--muted);font-weight:700}
+
+.release-link{background:transparent;border:0;color:var(--muted);font-size:12px;text-decoration:underline;cursor:pointer;padding:2px 0}
+.release-notes{max-width:620px}
+.release-notes h3{margin:14px 0 6px}
+.release-notes ul{margin:6px 0 12px;padding-left:22px;line-height:1.7}
+.release-notes .version{font-weight:800;font-size:18px}
+@media(max-width:500px){
+  .actions{right:8px;width:112px}
+  .actions .btn{min-height:88px;font-size:23px;padding:10px 8px}
+}
+
+
+
+/* v1.2: 上部固定サマリー */
+.top-dock{
+  position:sticky;
+  top:0;
+  z-index:80;
+  display:grid;
+  grid-template-columns:minmax(95px,1fr) minmax(80px,.7fr) auto auto;
+  gap:8px;
+  align-items:stretch;
+  padding:8px;
+  margin:0 0 12px;
+  background:color-mix(in srgb,var(--bg) 94%,transparent);
+  backdrop-filter:blur(12px);
+  -webkit-backdrop-filter:blur(12px);
+  border:1px solid var(--line);
+  border-radius:14px;
+  box-shadow:var(--shadow);
+}
+.top-dock .metric{
+  min-width:0;
+  padding:7px 9px;
+  border:1px solid var(--line);
+  border-radius:10px;
+  background:var(--card);
+}
+.top-dock .metric span{
+  display:block;
+  font-size:10px;
+  color:var(--muted);
+}
+.top-dock .metric b{
+  display:block;
+  margin-top:2px;
+  font-size:20px;
+  line-height:1.1;
+}
+.top-dock .metric-fare b{font-size:28px}
+.top-dock .metric-count b{font-size:24px}
+.top-dock .dock-btn{
+  border:0;
+  border-radius:10px;
+  padding:8px 12px;
+  min-width:82px;
+  font-size:17px;
+  font-weight:800;
+  cursor:pointer;
+}
+.top-dock .dock-start{background:var(--blue);color:#fff}
+.top-dock .dock-finish{background:#dc2626;color:#fff}
+.top-dock .dock-btn:disabled{opacity:.45;cursor:not-allowed}
+
+/* 既存の右側フローティング操作はv1.2では非表示 */
+.actions{display:none!important}
+
+/* 履歴の通し番号・割り込み追加 */
+.trip-wrap{margin:0}
+.trip-line{display:flex;gap:8px;align-items:flex-start}
+.trip-line .trip{flex:1;min-width:0}
+.trip-seq{
+  width:30px;height:30px;flex:0 0 30px;
+  display:grid;place-items:center;
+  border-radius:999px;
+  border:1px solid var(--line);
+  background:var(--card);
+  color:var(--muted);
+  font-weight:800;
+  font-size:13px;
+  margin-top:8px;
+}
+.insert-wrap{display:flex;justify-content:center;margin:5px 0}
+.insert-btn{
+  border:1px dashed var(--line);
+  background:transparent;
+  color:var(--muted);
+  border-radius:999px;
+  padding:4px 10px;
+  font-size:12px;
+  cursor:pointer;
+}
+.insert-btn:hover{background:var(--card)}
+
+@media(max-width:640px){
+  .top-dock{
+    grid-template-columns:1fr .7fr 68px 68px;
+    gap:6px;
+    padding:6px;
+  }
+  .top-dock .metric{padding:6px 7px}
+  .top-dock .metric b{font-size:17px}
+  .top-dock .metric-fare b{font-size:25px}
+  .top-dock .metric-count b{font-size:21px}
+  .top-dock .dock-btn{
+    min-width:0;
+    padding:7px 5px;
+    font-size:14px;
+  }
+}
+
+.print-sheet{display:none}
+@page{size:A4 portrait;margin:8mm}
+@media print{
+  body{background:#fff}
+  .app,.bottom,dialog{display:none!important}
+  .print-sheet{display:none!important;color:#000;font-family:"Yu Gothic","Hiragino Sans",sans-serif}
+  body.print-standard #printSheet{display:block!important}
+  body.print-private #privateReport{display:block!important}
+  .print-sheet h1{text-align:center;font-size:20px;margin:0 0 6px}
+  .print-sheet table{border-collapse:collapse;width:100%;table-layout:fixed}
+  .print-sheet th,.print-sheet td{border:1px solid #000;padding:4px;font-size:9px;height:22px}
+  .print-meta th{background:#f2f2f2}
+  .print-log th{background:#f2f2f2;font-weight:700}
+  .print-log td{height:20px}
+  .print-footer{margin-top:8px;font-size:9px;line-height:1.8}
+}
+
+@media print{
+  .no-print,.bottom,dialog{display:none!important}.app{max-width:none;padding:0}.card{box-shadow:none}
+  .main{grid-template-columns:1fr}.summary{grid-template-columns:repeat(4,1fr)}
+}
+
+/* v1.5 個人タクシー運転日報 */
+.private-report h1{font-size:24px!important;letter-spacing:.35em;margin:2px 0 5px!important}
+.private-report .org{text-align:right;font-size:9px;margin-bottom:3px}
+.private-report table{margin:0}
+.private-report th,.private-report td{padding:2px!important;height:19px!important;font-size:8px!important;text-align:center;vertical-align:middle}
+.private-report .left{text-align:left}
+.private-report .section{font-weight:700;writing-mode:vertical-rl;letter-spacing:.08em;width:22px}
+.private-report .ride-table td{height:21px!important}
+.private-report .smallnote{font-size:7px}
+.private-report-dialog{max-width:720px}
+.private-report-dialog .form{grid-template-columns:repeat(3,1fr)}
+@media(max-width:650px){.private-report-dialog .form{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<div class="app">
+<header>
+  <div><h1>乗務日報 <small>PILOT v1.6</small></h1><div class="muted">プロドライバー向け</div><button class="release-link no-print" onclick="releaseDialog.showModal()">リリースノート</button></div>
+  <div style="display:flex;gap:8px;align-items:center"><button id="themeBtn" class="theme-toggle no-print" onclick="cycleTheme()" aria-label="表示モード切替" title="表示モード切替">🌓</button><button class="btn light no-print" onclick="newDay()">新しい日</button></div>
+</header>
+
+<div class="top-dock no-print">
+  <div class="metric metric-fare"><span>累計売上</span><b id="dockFare">¥0</b></div>
+  <div class="metric metric-count"><span>乗車回数</span><b id="dockCount">0</b></div>
+  <button id="startBtn" class="dock-btn dock-start" onclick="startTrip()">🚕 乗車</button>
+  <button id="finishBtn" class="dock-btn dock-finish" onclick="finishTrip()">🏁 降車</button>
+</div>
+
+
+<section class="card sales-hero">
+  <div>
+    <div class="hero-label">本日の累計売上</div>
+    <div id="sFare" class="hero-value">¥0</div>
+    <div class="progress-wrap">
+      <div class="progress-track"><div id="progressBar" class="progress-bar"></div></div>
+      <div class="progress-text">
+        <span id="progressText">目標未設定</span>
+        <span id="remainingText"></span>
+      </div>
+    </div>
+  </div>
+  <div class="breakdown">
+    <div><span>Uber</span><b id="uberFare">¥0 <small id="uberCount" class="cat-count">0回</small></b></div>
+    <div><span>手上げ</span><b id="handFare">¥0 <small id="handCount" class="cat-count">0回</small></b></div>
+    <div><span>その他</span><b id="otherFare">¥0 <small id="otherCount" class="cat-count">0回</small></b></div>
+  </div>
+</section>
+
+<section class="grid summary">
+  <div class="card stat"><span>乗車回数</span><b id="sCount">0</b></div>
+  <div class="card stat"><span>平均単価</span><b id="avgFare">¥0</b></div>
+  <div class="card stat"><span>乗車人数</span><b id="sPax">0</b></div>
+  <div class="card stat"><span>高速料金</span><b id="sToll">¥0</b></div>
+</section>
+
+<section class="grid main">
+<div class="grid">
+  <div class="card">
+    <h2>乗務情報</h2>
+    <div class="form">
+      <div class="field"><label>日付</label><input id="date" type="date"></div>
+      <div class="field"><label>天候</label><select id="weather"><option>晴れ</option><option>曇り</option><option>雨</option><option>雪</option><option>その他</option></select></div>
+      <div class="field"><label>乗務員名</label><input id="driver" placeholder="氏名"></div>
+      <div class="field"><label>車両番号</label><input id="car" placeholder="車両番号"></div>
+      <div class="field"><label>出庫時刻</label><input id="startTime" type="time"></div>
+      <div class="field"><label>帰庫時刻</label><input id="endTime" type="time"></div>
+      <div class="field full"><label>本日の売上目標</label><input id="goal" type="number" inputmode="numeric" placeholder="例：80000"></div>
+    </div>
+    <div class="toolbar no-print">
+      <button class="btn light" onclick="nowTo('startTime')">出庫を現在時刻</button>
+      <button class="btn light" onclick="nowTo('endTime')">帰庫を現在時刻</button>
+    </div>
+  </div>
+
+  <div class="card no-print">
+    <h2>データ操作</h2>
+    <div class="toolbar">
+      <button class="btn light" onclick="downloadCSV()">CSV保存</button>
+      <button class="btn light" onclick="printReport()">RideLog PDF</button>
+      <button class="btn light" onclick="privateReportDialog.showModal()">個タク運転日報</button>
+      <button class="btn danger" onclick="clearTrips()">乗車記録を消去</button>
+    </div>
+    <hr style="border:0;border-top:1px solid var(--line);margin:14px 0">
+    <h2 style="margin-top:0">表示設定</h2>
+    <div class="settings-row">
+      <label for="wakeMode"><strong>画面表示</strong></label>
+      <select id="wakeMode" onchange="setWakeMode(this.value)">
+        <option value="auto">自動（乗車中のみ常時表示）</option>
+        <option value="on">常時表示</option>
+        <option value="normal">通常</option>
+      </select>
+    </div>
+    <div id="wakeStatus" class="wake-status">画面表示：通常</div>
+  </div>
+</div>
+
+<div class="grid">
+  <div class="card no-print" id="entry">
+    <h2>乗車入力</h2>
+    <div id="status" class="status">待機中</div>
+    <div class="form">
+      <div class="field"><label>乗車種別</label><select id="type" onchange="applyTypeSelectColor(this);save()"><option value="Uber">⬛ Uber</option><option value="手上げ">🟪 手上げ</option><option value="駅、乗り場">🟩 駅、乗り場</option><option value="ホテル">🟨 ホテル</option><option value="空港">🟦 空港</option><option value="GO">🟦 GO</option><option value="DiDi">🟧 DiDi</option><option value="ハイヤー">⬜ ハイヤー</option><option value="その他">◼︎ その他</option></select></div>
+      <div class="field"><label>人数</label><select id="pax"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option></select></div>
+      <div class="field full"><label>乗車地</label><input id="pickup" placeholder="例：高円寺"></div>
+      <div class="field full"><label>降車地</label><input id="dropoff" placeholder="例：丸の内"></div>
+      <div class="field"><label>料金</label><input id="fare" type="number" inputmode="numeric" placeholder="0"></div>
+      <div class="field"><label>高速料金</label><input id="toll" type="number" inputmode="numeric" placeholder="0"></div>
+      <div class="field full"><label>メモ</label><textarea id="note" placeholder="経由地・待機・連絡事項など"></textarea></div>
+    </div>
+    <div class="actions">
+      <button id="legacyStartBtn" class="btn primary" onclick="startTrip()"><span class="action-icon">🚕</span><span>乗車</span></button>
+      <button id="legacyFinishBtn" class="btn success" onclick="finishTrip()"><span class="action-icon">🏁</span><span>降車</span></button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>本日の乗車記録</h2>
+    <div id="tripList" class="list"></div>
+  </div>
+</div>
+</section>
+</div>
+
+
+<section id="printSheet" class="print-sheet">
+  <h1>RideLog 乗務日報</h1>
+  <table class="print-meta">
+    <tr>
+      <th>日付</th><td id="pDate"></td>
+      <th>車両番号</th><td id="pCar"></td>
+      <th>乗務員名</th><td id="pDriver"></td>
+      <th>出庫時間</th><td id="pStart"></td>
+      <th>帰庫時間</th><td id="pEnd"></td>
+    </tr>
+    <tr>
+      <th>天候</th><td id="pWeather"></td>
+      <th colspan="2">営業収入</th><td id="pTotal" colspan="2"></td>
+      <th colspan="2">高速料金合計</th><td id="pToll" colspan="2"></td>
+    </tr>
+  </table>
+  <table class="print-log">
+    <thead>
+      <tr>
+        <th>回数</th><th>区分</th><th>乗車時刻</th><th>乗車地</th>
+        <th>降車時刻</th><th>降車地</th><th>人数</th><th>高速料金</th><th>売上</th>
+      </tr>
+    </thead>
+    <tbody id="printRows"></tbody>
+  </table>
+  <div class="print-footer">
+    <div>始業点検　□スマホホルダー　□傘　□毛布　□消臭剤　□毛羽たき　□粘着ローラー　□非常表示板</div>
+    <div>連絡事項：____________________________________________________________</div>
+  </div>
+</section>
+
+<section id="privateReport" class="print-sheet private-report">
+  <div class="org">日個連東京都営業協同組合 様式参考</div>
+  <h1>運 転 日 報</h1>
+  <table>
+    <tr><th>年 月 日（曜）</th><td id="prDate" colspan="2"></td><th>天候</th><td id="prWeather"></td><th>事業者名</th><td id="prBusiness" colspan="3"></td></tr>
+    <tr><th>出庫 睡眠時間</th><td id="prSleep" colspan="2"></td><th>アルコール検知器</th><td id="prAlcoholOut">使用</td><th>酒気帯</th><td id="prSakeOut">無</td><th>帰庫 アルコール検知器</th><td id="prAlcoholIn">使用</td><th>酒気帯</th><td id="prSakeIn">無</td></tr>
+    <tr><th>更新期限 免許</th><td id="prLicense" colspan="2"></td><th>車検</th><td id="prInspection" colspan="2"></td><th>メーター検査</th><td id="prMeterInspection" colspan="3"></td></tr>
+  </table>
+  <table>
+    <tr><th></th><th>時：分</th><th>車両メーター走行km</th><th>運賃メーター走行km</th><th>運賃メーター実車km</th><th>営業回数</th><th>燃料消費量</th><th>営業収入</th></tr>
+    <tr><th>帰庫</th><td id="prEnd"></td><td id="prOdoEnd"></td><td id="prFareMeterEnd"></td><td id="prLoadedKm"></td><td id="prCount" rowspan="3"></td><td id="prFuel" rowspan="3"></td><td id="prIncome" rowspan="3"></td></tr>
+    <tr><th>出庫</th><td id="prStart"></td><td id="prOdoStart"></td><td id="prFareMeterStart"></td><td></td></tr>
+    <tr><th>差引</th><td></td><td id="prOdoDiff"></td><td id="prFareMeterDiff"></td><td></td></tr>
+    <tr><th colspan="2">自家使用走行km</th><td id="prPrivateKm"></td><th colspan="2">実車率算定用の走行km</th><td id="prCalcKm"></td><th>乗車人数</th><td id="prPax"></td></tr>
+  </table>
+  <table>
+    <tr><th class="section" rowspan="4">高速道路</th><th>路線名</th><th>入口</th><th>出口</th><th>走行距離</th><th>時刻</th><th>通行料</th><th>往復の別</th></tr>
+    <tr><td></td><td></td><td></td><td></td><td>～</td><td></td><td>往・復</td></tr>
+    <tr><td></td><td></td><td></td><td></td><td>～</td><td></td><td>往・復</td></tr>
+    <tr><td></td><td></td><td></td><td></td><td>～</td><td></td><td>往・復</td></tr>
+  </table>
+  <table>
+    <tr><th class="section" rowspan="4">自回家送使用休憩</th><th>回送休憩自家の別</th><th colspan="3">区間（場所）</th><th>時：分 ～ 時：分</th></tr>
+    <tr><td>回送・休憩・自家</td><td colspan="3">～</td><td>： ～ ：</td></tr>
+    <tr><td>回送・休憩・自家</td><td colspan="3">～</td><td>： ～ ：</td></tr>
+    <tr><td>回送・休憩・自家</td><td colspan="3">～</td><td>： ～ ：</td></tr>
+  </table>
+  <table class="ride-table">
+    <thead><tr><th>回数</th><th>人員</th><th>乗車地</th><th>降車地</th><th>降車時刻</th><th>運賃額</th><th>備考</th></tr></thead>
+    <tbody id="privateRows"></tbody>
+  </table>
+</section>
+
+<nav class="bottom no-print">
+  <button class="nav active" onclick="window.scrollTo({top:0,behavior:'smooth'})">ホーム</button>
+  <button class="nav" onclick="document.getElementById('entry').scrollIntoView({behavior:'smooth'})">入力</button>
+  <button class="nav" onclick="document.getElementById('tripList').scrollIntoView({behavior:'smooth'})">履歴</button>
+  <button class="nav" onclick="printReport()">PDF</button>
+</nav>
+
+
+<dialog id="releaseDialog">
+<div class="dialog release-notes">
+  <div class="version">RideLog Pilot v1.6</div>
+  <div class="muted">2026.09.20</div>
+  <h3>今回の改善</h3>
+  <ul>
+    <li>ホーム内訳を「Uber／手上げ／その他」に変更し、各金額の右側に合計回数を表示</li>
+    <li>乗車種別「駅」を「駅、乗り場」に変更</li>
+    <li>本日の乗車記録で未入力項目を赤枠表示</li>
+    <li>乗車中は「乗車」、待機中は「降車」ボタンを一回り縮小し、次に押すボタンを明確化</li>
+    <li>v1.5の個人タクシー運転日報機能を継続</li>
+  </ul>
+  <div class="toolbar" style="justify-content:flex-end">
+    <button class="btn light" onclick="releaseDialog.close()">閉じる</button>
+  </div>
+</div>
+</dialog>
+
+
+<dialog id="privateReportDialog">
+<div class="dialog private-report-dialog">
+  <h2>個人タクシー 運転日報</h2>
+  <div class="muted" style="margin-bottom:10px">RideLogにある乗車記録は自動転記します。下の項目は必要なものだけ入力してください。</div>
+  <div class="form">
+    <div class="field"><label>事業者名</label><input id="prBusinessInput"></div>
+    <div class="field"><label>睡眠時間</label><input id="prSleepInput" placeholder="例：7時間"></div>
+    <div class="field"><label>免許更新期限</label><input id="prLicenseInput" placeholder="YYYY/MM/DD"></div>
+    <div class="field"><label>車検期限</label><input id="prInspectionInput" placeholder="YYYY/MM/DD"></div>
+    <div class="field"><label>メーター検査</label><input id="prMeterInspectionInput" placeholder="YYYY/MM"></div>
+    <div class="field"><label>燃料消費量（L）</label><input id="prFuelInput" type="number" step="0.1"></div>
+    <div class="field"><label>出庫 車両メーターkm</label><input id="prOdoStartInput" type="number" step="0.1"></div>
+    <div class="field"><label>帰庫 車両メーターkm</label><input id="prOdoEndInput" type="number" step="0.1"></div>
+    <div class="field"><label>自家使用走行km</label><input id="prPrivateKmInput" type="number" step="0.1"></div>
+    <div class="field"><label>出庫 運賃メーターkm</label><input id="prFareMeterStartInput" type="number" step="0.1"></div>
+    <div class="field"><label>帰庫 運賃メーターkm</label><input id="prFareMeterEndInput" type="number" step="0.1"></div>
+    <div class="field"><label>実車km</label><input id="prLoadedKmInput" type="number" step="0.1"></div>
+  </div>
+  <div class="toolbar" style="justify-content:flex-end;margin-top:14px">
+    <button class="btn light" onclick="privateReportDialog.close()">キャンセル</button>
+    <button class="btn primary" onclick="printPrivateReport()">日報をPDF／印刷</button>
+  </div>
+</div>
+</dialog>
+
+<dialog id="insertDialog">
+<div class="dialog">
+  <h2>乗務記録を途中追加</h2>
+  <div id="insertHint" class="muted" style="margin-bottom:10px"></div>
+  <div class="form">
+    <div class="field"><label>乗車種別</label>
+      <select id="iType" onchange="applyTypeSelectColor(this)">
+        <option value="Uber">⬛ Uber</option><option value="手上げ">🟪 手上げ</option><option value="駅、乗り場">🟩 駅、乗り場</option><option value="ホテル">🟨 ホテル</option><option value="空港">🟦 空港</option><option value="GO">🟦 GO</option><option value="DiDi">🟧 DiDi</option><option value="ハイヤー">⬜ ハイヤー</option><option value="その他">◼︎ その他</option>
+      </select>
+    </div>
+    <div class="field"><label>人数</label><select id="iPax"><option value="1">1名</option><option value="2">2名</option><option value="3">3名</option><option value="4">4名</option><option value="5">5名</option><option value="6">6名</option><option value="7">7名</option><option value="8">8名</option></select></div>
+    <div class="field"><label>乗車時刻</label><input id="iStart" type="time"></div>
+    <div class="field"><label>降車時刻</label><input id="iEnd" type="time"></div>
+    <div class="field full"><label>乗車地</label><input id="iPickup"></div>
+    <div class="field full"><label>降車地</label><input id="iDropoff"></div>
+    <div class="field"><label>料金</label><input id="iFare" type="number"></div>
+    <div class="field"><label>高速料金</label><input id="iToll" type="number"></div>
+    <div class="field full"><label>メモ</label><textarea id="iNote" rows="3"></textarea></div>
+  </div>
+  <div class="toolbar" style="justify-content:flex-end">
+    <button class="btn light" onclick="insertDialog.close()">取消</button>
+    <button class="btn success" onclick="saveInsertedTrip()">追加</button>
+  </div>
+</div>
+</dialog>
+
+<dialog id="editDialog">
+<div class="dialog">
+  <h2>乗車記録を編集</h2>
+  <div class="form">
+    <div class="field full"><label>乗車地</label><input id="ePickup" autocomplete="off"></div>
+    <div class="field full"><label>降車地</label><input id="eDropoff" autocomplete="off"></div>
+    <div class="field"><label>乗車種別</label>
+      <select id="eType" onchange="applyTypeSelectColor(this)">
+        <option value="Uber">⬛ Uber</option><option value="手上げ">🟪 手上げ</option><option value="駅、乗り場">🟩 駅、乗り場</option><option value="ホテル">🟨 ホテル</option><option value="空港">🟦 空港</option><option value="GO">🟦 GO</option><option value="DiDi">🟧 DiDi</option><option value="ハイヤー">⬜ ハイヤー</option><option value="その他">◼︎ その他</option>
+      </select>
+    </div>
+    <div class="field"><label>人数</label><select id="ePax"><option value="1">1名</option><option value="2">2名</option><option value="3">3名</option><option value="4">4名</option><option value="5">5名</option><option value="6">6名</option><option value="7">7名</option><option value="8">8名</option></select></div>
+    <div class="field"><label>料金</label><input id="eFare" type="number"></div>
+    <div class="field"><label>高速料金</label><input id="eToll" type="number"></div>
+    <div class="field full"><label>メモ</label><textarea id="eNote" rows="3"></textarea></div>
+  </div>
+  <details class="edit-time-details">
+    <summary>時刻も修正する</summary>
+    <div class="form" style="margin-top:10px">
+      <div class="field"><label>乗車時刻</label><input id="eStart" type="time"></div>
+      <div class="field"><label>降車時刻</label><input id="eEnd" type="time"></div>
+    </div>
+  </details>
+  <div class="toolbar" style="justify-content:flex-end">
+    <button class="btn light" onclick="editDialog.close()">取消</button>
+    <button class="btn success" onclick="saveEdit()">保存</button>
+  </div>
+</div>
+</dialog>
+
+<script>
+const KEY='ride_log_prototype_v1';
+let state={meta:{},trips:[],active:null};
+let editIndex=-1;
+const $=id=>document.getElementById(id);
+const pad=n=>String(n).padStart(2,'0');
+const now=()=>{const d=new Date();return `${pad(d.getHours())}:${pad(d.getMinutes())}`};
+const today=()=>{const d=new Date();return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`};
+const yen=n=>'¥'+Number(n||0).toLocaleString('ja-JP');
+
+function typeClass(type){
+  return ({
+    'Uber':'type-uber','GO':'type-go','DiDi':'type-didi','手上げ':'type-hand',
+    '空港':'type-airport','駅':'type-station','駅、乗り場':'type-station','ホテル':'type-hotel','ハイヤー':'type-hire','その他':'type-other'
+  })[type]||'type-other';
+}
+function applyTypeSelectColor(el){
+  if(!el) return;
+  [...el.classList].filter(c=>c.startsWith('type-')).forEach(c=>el.classList.remove(c));
+  el.classList.add(typeClass(el.value));
+}
+
+
+function save(){
+  readMeta();
+  localStorage.setItem(KEY,JSON.stringify(state));
+  render();
+}
+function load(){
+  try{state=JSON.parse(localStorage.getItem(KEY))||state}catch(e){}
+  if(!state.meta.date) state.meta.date=today();
+  writeMeta(); render();
+}
+function readMeta(){
+  ['date','weather','driver','car','startTime','endTime','goal'].forEach(k=>state.meta[k]=$(k).value);
+}
+function writeMeta(){
+  ['date','weather','driver','car','startTime','endTime','goal'].forEach(k=>$(k).value=state.meta[k]||'');
+}
+function nowTo(id){$(id).value=now();save()}
+function startTrip(){
+  if(state.active){alert('すでに乗車中です。');return}
+  state.active={
+    start:now(),
+    type:$('type').value,
+    pax:+$('pax').value,
+    pickup:$('pickup').value.trim()
+  };
+  save();
+  syncWakeLock();
+  requestAnimationFrame(()=>{
+    const pickup=$('pickup');
+    pickup.scrollIntoView({behavior:'smooth',block:'center'});
+    setTimeout(()=>pickup.focus({preventScroll:true}),220);
+  });
+}
+function finishTrip(){
+  if(!state.active){alert('先に「乗車開始」を押してください。');return}
+  const trip={
+    ...state.active,
+    type:$('type').value,
+    pax:+($('pax').value||1),
+    pickup:$('pickup').value.trim(),
+    end:now(),
+    dropoff:$('dropoff').value.trim(),
+    fare:+($('fare').value||0),
+    toll:+($('toll').value||0),
+    note:$('note').value.trim()
+  };
+  state.trips.push(trip);
+  state.active=null;
+  ['pickup','dropoff','fare','toll','note'].forEach(id=>$(id).value='');
+  $('type').value='Uber';
+  $('pax').value='1';
+  applyTypeSelectColor($('type'));
+  save();syncWakeLock();
+}
+function render(){
+  const fare=state.trips.reduce((a,t)=>a+t.fare,0);
+  const toll=state.trips.reduce((a,t)=>a+t.toll,0);
+  const pax=state.trips.reduce((a,t)=>a+t.pax,0);
+  const count=state.trips.length;
+  const uberTrips=state.trips.filter(t=>t.type==='Uber');
+  const handTrips=state.trips.filter(t=>t.type==='手上げ');
+  const uber=uberTrips.reduce((a,t)=>a+t.fare,0);
+  const hand=handTrips.reduce((a,t)=>a+t.fare,0);
+  const other=fare-uber-hand;
+  const otherCount=count-uberTrips.length-handTrips.length;
+  const goal=Number(state.meta.goal||0);
+  const rate=goal>0?Math.min(100,Math.round(fare/goal*100)):0;
+  $('sFare').textContent=yen(fare); $('sToll').textContent=yen(toll);
+  $('sCount').textContent=count; $('sPax').textContent=pax;
+  $('dockFare').textContent=yen(fare);
+  $('dockCount').textContent=count;
+  $('avgFare').textContent=yen(count?Math.round(fare/count):0);
+  $('uberFare').childNodes[0].nodeValue=yen(uber)+' ';
+  $('uberCount').textContent=uberTrips.length+'回';
+  $('handFare').childNodes[0].nodeValue=yen(hand)+' ';
+  $('handCount').textContent=handTrips.length+'回';
+  $('otherFare').childNodes[0].nodeValue=yen(other)+' ';
+  $('otherCount').textContent=otherCount+'回';
+  $('progressBar').style.width=rate+'%';
+  $('progressText').textContent=goal>0?`目標 ${yen(goal)}／達成率 ${rate}%`:'目標未設定';
+  $('remainingText').textContent=goal>0?(fare>=goal?`目標達成 +${yen(fare-goal)}`:`あと ${yen(goal-fare)}`):'';
+  $('status').className='status'+(state.active?' active':'');
+  $('status').textContent=state.active?`乗車中　${state.active.start}／${state.active.pickup||'乗車地未入力'}`:'待機中';
+  $('startBtn').disabled=!!state.active;
+  $('finishBtn').disabled=!state.active;
+  $('startBtn').style.opacity=state.active?'.62':'1';
+  $('finishBtn').style.opacity=state.active?'1':'.62';
+  $('startBtn').classList.toggle('past-action',!!state.active);
+  $('startBtn').classList.toggle('next-action',!state.active);
+  $('finishBtn').classList.toggle('past-action',!state.active);
+  $('finishBtn').classList.toggle('next-action',!!state.active);
+  const list=$('tripList');
+  if(!state.trips.length){
+    list.innerHTML='<div class="empty">まだ乗車記録がありません。</div>';
+    return;
+  }
+  list.innerHTML=state.trips.map((t,i)=>`
+    <div class="trip-wrap">
+      ${i===0?`<div class="insert-wrap"><button class="insert-btn no-print" onclick="openInsertDialog(0)">＋ この前に追加</button></div>`:''}
+      <div class="trip-line">
+        <div class="trip-seq">${i+1}</div>
+        <div class="trip">
+          <div class="badge ${typeClass(t.type)}">${escapeHtml(t.type)}</div>
+          <div>
+            <div class="route">${missingText(t.pickup)} → ${missingText(t.dropoff)}</div>
+            <div class="meta">${missingText(t.start)}–${missingText(t.end)}／${t.pax?Number(t.pax)+'名':'<span class="missing">未入力</span>'}／高速 ${yen(t.toll)}</div>
+            ${t.note?`<div class="meta">${escapeHtml(t.note)}</div>`:''}
+          </div>
+          <div class="fare">${missingFare(t.fare)}<div>
+            <button class="iconbtn no-print" onclick="editTrip(${i})">修正</button>
+            <button class="iconbtn no-print" onclick="deleteTrip(${i})">削除</button>
+          </div></div>
+        </div>
+      </div>
+      <div class="insert-wrap"><button class="insert-btn no-print" onclick="openInsertDialog(${i+1})">＋ この後に追加</button></div>
+    </div>`).join('');
+}
+function missingText(v,label='未入力'){return (v===undefined||v===null||String(v).trim()==='')?'<span class="missing">未入力</span>':escapeHtml(v)}
+function missingFare(v){return Number(v||0)>0?yen(v):'<span class="missing">未入力</span>'}
+function escapeHtml(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+function deleteTrip(i){if(confirm('この記録を削除しますか？')){state.trips.splice(i,1);save()}}
+
+let insertIndex=0;
+function openInsertDialog(index){
+  insertIndex=index;
+  $('insertHint').textContent=`${index+1}番目の乗務記録として追加します。`;
+  $('iType').value='Uber'; applyTypeSelectColor($('iType'));
+  $('iPax').value='1';
+  $('iStart').value='';
+  $('iEnd').value='';
+  $('iPickup').value='';
+  $('iDropoff').value='';
+  $('iFare').value=0;
+  $('iToll').value=0;
+  $('iNote').value='';
+  insertDialog.showModal();
+}
+function saveInsertedTrip(){
+  const trip={
+    type:$('iType').value,
+    pax:+($('iPax').value||1),
+    start:$('iStart').value,
+    end:$('iEnd').value,
+    pickup:$('iPickup').value.trim(),
+    dropoff:$('iDropoff').value.trim(),
+    fare:+($('iFare').value||0),
+    toll:+($('iToll').value||0),
+    note:$('iNote').value.trim()
+  };
+  state.trips.splice(insertIndex,0,trip);
+  insertDialog.close();
+  save();
+}
+
+function editTrip(i){
+  editIndex=i;const t=state.trips[i];
+  $('ePickup').value=t.pickup||'';$('eDropoff').value=t.dropoff||'';
+  $('eType').value=t.type||'Uber';applyTypeSelectColor($('eType'));
+  $('ePax').value=t.pax||1;$('eFare').value=t.fare||0;$('eToll').value=t.toll||0;
+  $('eNote').value=t.note||'';$('eStart').value=t.start||'';$('eEnd').value=t.end||'';
+  editDialog.showModal();
+  setTimeout(()=>$('ePickup').focus(),0);
+}
+function saveEdit(){
+  const t=state.trips[editIndex];
+  Object.assign(t,{
+    pickup:$('ePickup').value,dropoff:$('eDropoff').value,type:$('eType').value,
+    pax:+($('ePax').value||1),fare:+($('eFare').value||0),toll:+($('eToll').value||0),
+    note:$('eNote').value,start:$('eStart').value,end:$('eEnd').value
+  });
+  editDialog.close();save();
+}
+function clearTrips(){
+  if(!confirm('本日の乗車記録をすべて消去しますか？')) return;
+  const total=state.trips.reduce((a,t)=>a+(t.fare||0),0);
+  const ok=confirm(`本当に削除しますか？\n\n乗車記録：${state.trips.length}件\n売上合計：${yen(total)}\n\nこの操作は取り消せません。`);
+  if(ok){state.trips=[];state.active=null;save()}
+}
+function newDay(){
+  if(!confirm('新しい日を開始しますか？ 現在の乗車記録は消去されます。'))return;
+  state={meta:{date:today(),driver:state.meta.driver||'',car:state.meta.car||'',weather:'晴れ',goal:state.meta.goal||''},trips:[],active:null};
+  writeMeta();save();
+}
+async function downloadCSV(){
+  readMeta();
+  const rows=[['回数','種別','乗車時刻','乗車地','降車時刻','降車地','人数','料金','高速料金','メモ']];
+  state.trips.forEach((t,i)=>rows.push([i+1,t.type,t.start,t.pickup,t.end,t.dropoff,t.pax,t.fare,t.toll,t.note]));
+  const csv='\uFEFF'+rows.map(r=>r.map(v=>`"${String(v??'').replaceAll('"','""')}"`).join(',')).join('\n');
+  const filename=`RideLog_乗務日報_${state.meta.date||today()}.csv`;
+  const file=new File([csv],filename,{type:'text/csv;charset=utf-8'});
+  try{
+    if(navigator.canShare && navigator.canShare({files:[file]}) && navigator.share){
+      await navigator.share({files:[file],title:'RideLog CSV'});
+      return;
+    }
+  }catch(e){
+    if(e && e.name==='AbortError') return;
+  }
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download=filename;a.style.display='none';
+  document.body.appendChild(a);a.click();
+  setTimeout(()=>{URL.revokeObjectURL(url);a.remove()},1500);
+}
+
+function renderPrintSheet(){
+  readMeta();
+  $('pDate').textContent=state.meta.date||'';
+  $('pCar').textContent=state.meta.car||'';
+  $('pDriver').textContent=state.meta.driver||'';
+  $('pStart').textContent=state.meta.startTime||'';
+  $('pEnd').textContent=state.meta.endTime||'';
+  $('pWeather').textContent=state.meta.weather||'';
+  const total=state.trips.reduce((a,t)=>a+(t.fare||0),0);
+  const toll=state.trips.reduce((a,t)=>a+(t.toll||0),0);
+  $('pTotal').textContent=yen(total);
+  $('pToll').textContent=yen(toll);
+  const rows=[...state.trips];
+  while(rows.length<26) rows.push(null);
+  $('printRows').innerHTML=rows.slice(0,26).map((t,i)=>t?`
+    <tr><td>${i+1}</td><td>${escapeHtml(t.type||'')}</td><td>${t.start||''}</td><td>${escapeHtml(t.pickup||'')}</td>
+    <td>${t.end||''}</td><td>${escapeHtml(t.dropoff||'')}</td><td>${t.pax||''}</td><td>${yen(t.toll||0)}</td><td>${yen(t.fare||0)}</td></tr>`:
+    `<tr><td>${i+1}</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>`).join('');
+}
+
+function val(id){return ($(id)?.value||'').trim()}
+function numVal(id){const v=Number($(id)?.value||0);return Number.isFinite(v)?v:0}
+function diffText(a,b){return (a&&b)?String(Math.round((Number(b)-Number(a))*10)/10):''}
+function renderPrivateReport(){
+  readMeta();
+  const d=state.meta.date?new Date(state.meta.date+'T00:00:00'):new Date();
+  const wd=['日','月','火','水','木','金','土'][d.getDay()];
+  $('prDate').textContent=`${d.getFullYear()}年 ${d.getMonth()+1}月 ${d.getDate()}日（${wd}曜）`;
+  $('prWeather').textContent=state.meta.weather||'';
+  $('prBusiness').textContent=val('prBusinessInput');
+  $('prSleep').textContent=val('prSleepInput');
+  $('prLicense').textContent=val('prLicenseInput');
+  $('prInspection').textContent=val('prInspectionInput');
+  $('prMeterInspection').textContent=val('prMeterInspectionInput');
+  $('prStart').textContent=state.meta.startTime||''; $('prEnd').textContent=state.meta.endTime||'';
+  const os=val('prOdoStartInput'), oe=val('prOdoEndInput'), fs=val('prFareMeterStartInput'), fe=val('prFareMeterEndInput');
+  $('prOdoStart').textContent=os; $('prOdoEnd').textContent=oe; $('prOdoDiff').textContent=diffText(os,oe);
+  $('prFareMeterStart').textContent=fs; $('prFareMeterEnd').textContent=fe; $('prFareMeterDiff').textContent=diffText(fs,fe);
+  $('prLoadedKm').textContent=val('prLoadedKmInput'); $('prFuel').textContent=val('prFuelInput'); $('prPrivateKm').textContent=val('prPrivateKmInput');
+  const calc=oe&&os?Math.max(0,Number(oe)-Number(os)-numVal('prPrivateKmInput')):''; $('prCalcKm').textContent=calc===''?'':String(Math.round(calc*10)/10);
+  const total=state.trips.reduce((a,t)=>a+(Number(t.fare)||0),0);
+  const pax=state.trips.reduce((a,t)=>a+(Number(t.pax)||0),0);
+  $('prCount').textContent=state.trips.length; $('prIncome').textContent=yen(total); $('prPax').textContent=pax+'人';
+  const rows=[...state.trips]; while(rows.length<18) rows.push(null);
+  $('privateRows').innerHTML=rows.slice(0,18).map((t,i)=>t?`<tr><td>${i+1}</td><td>${escapeHtml(String(t.pax||''))}</td><td class="left">${escapeHtml(t.pickup||'')}</td><td class="left">${escapeHtml(t.dropoff||'')}</td><td>${t.end||''}</td><td>${yen(t.fare||0)}</td><td class="left">${escapeHtml(t.note||'')}</td></tr>`:`<tr><td>${i+1}</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>`).join('');
+}
+function printPrivateReport(){
+  renderPrivateReport(); privateReportDialog.close();
+  document.body.classList.remove('print-standard'); document.body.classList.add('print-private');
+  setTimeout(()=>window.print(),80);
+}
+
+function printReport(){
+  renderPrintSheet();
+  document.body.classList.remove('print-private'); document.body.classList.add('print-standard');
+  try{
+    window.print();
+  }catch(e){
+    alert('印刷画面を開けませんでした。Safariで開き直して再度お試しください。');
+  }
+}
+
+window.addEventListener('beforeprint',()=>{if(document.body.classList.contains('print-private')) renderPrivateReport(); else renderPrintSheet()});
+window.addEventListener('afterprint',()=>document.body.classList.remove('print-standard','print-private'));
+
+document.querySelectorAll('input,select,textarea').forEach(el=>el.addEventListener('change',save));
+
+
+const WAKE_KEY='ride_log_wake_mode_v1';
+let wakeLock=null;
+
+async function acquireWakeLock(){
+  if(!('wakeLock' in navigator)){
+    $('wakeStatus').textContent='画面常時表示：このブラウザでは未対応';
+    return false;
+  }
+  try{
+    if(wakeLock) return true;
+    wakeLock=await navigator.wakeLock.request('screen');
+    wakeLock.addEventListener('release',()=>{
+      wakeLock=null;
+      updateWakeStatus();
+    });
+    updateWakeStatus();
+    return true;
+  }catch(e){
+    wakeLock=null;
+    $('wakeStatus').textContent='画面常時表示：許可されませんでした';
+    return false;
+  }
+}
+async function releaseWakeLock(){
+  if(wakeLock){
+    try{await wakeLock.release()}catch(e){}
+    wakeLock=null;
+  }
+  updateWakeStatus();
+}
+function currentWakeMode(){return localStorage.getItem(WAKE_KEY)||'auto'}
+async function syncWakeLock(){
+  const mode=currentWakeMode();
+  const shouldOn = mode==='on' || (mode==='auto' && !!state.active);
+  if(document.visibilityState!=='visible') return;
+  if(shouldOn) await acquireWakeLock(); else await releaseWakeLock();
+}
+function updateWakeStatus(){
+  const mode=currentWakeMode();
+  const label=mode==='on'?'常時表示':mode==='auto'?'自動（乗車中）':'通常';
+  const active=!!wakeLock;
+  $('wakeStatus').textContent=`画面表示：${label}${active?' ／ スリープ防止中':''}`;
+}
+async function setWakeMode(mode){
+  localStorage.setItem(WAKE_KEY,mode);
+  await syncWakeLock();
+}
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='visible') syncWakeLock();
+});
+
+const THEME_KEY='ride_log_theme_v1';
+function applyTheme(mode){
+  const root=document.documentElement;
+  if(mode==='auto'){
+    const dark=window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    root.dataset.theme=dark?'dark':'light';
+  }else{
+    root.dataset.theme=mode;
+  }
+  const icons={auto:'🌓',light:'☀️',dark:'🌙'};
+  const names={auto:'Auto（端末設定に追従）',light:'Day',dark:'Night'};
+  $('themeBtn').textContent=icons[mode]||'🌓';
+  $('themeBtn').title=names[mode]||'Auto（端末設定に追従）';
+  $('themeBtn').setAttribute('aria-label',names[mode]||'Auto（端末設定に追従）');
+}
+function cycleTheme(){
+  const current=localStorage.getItem(THEME_KEY)||'auto';
+  const next=current==='auto'?'light':current==='light'?'dark':'auto';
+  localStorage.setItem(THEME_KEY,next);
+  applyTheme(next);
+}
+if(window.matchMedia){
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change',()=>{
+    if((localStorage.getItem(THEME_KEY)||'auto')==='auto') applyTheme('auto');
+  });
+}
+
+applyTheme(localStorage.getItem(THEME_KEY)||'auto');
+load();
+$('wakeMode').value=currentWakeMode();
+applyTypeSelectColor($('type'));
+updateWakeStatus();
+syncWakeLock();
+</script>
+</body>
+</html>
