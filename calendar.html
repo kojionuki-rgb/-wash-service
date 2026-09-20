@@ -1,39 +1,164 @@
-<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>洗車受付日</title><style>
-*{box-sizing:border-box}body{margin:0;background:#f6f7f5;color:#303438;font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans",sans-serif}.w{max-width:460px;margin:auto;padding:18px 14px}.c{background:#fff;border:1px solid #d5d9dc;border-radius:28px;padding:20px 17px}h1{font-size:25px;margin:0}.m{color:#9aa0a6;font-size:13px;margin-top:5px}.head{display:flex;justify-content:space-between;align-items:center;margin:20px 0 10px}.nav{width:44px;height:44px;border:0;border-radius:12px;font-size:20px}.week,.grid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}.week div{text-align:center;font-size:11px;color:#999}.day{min-height:58px;border:1px solid #e2e5e7;border-radius:12px;background:#fff;font-weight:800}.day.on{background:#effaf1;border-color:#bfe1c5}.day small{display:block;font-size:9px;color:#7d877f}.save{width:100%;margin-top:18px;border:0;border-radius:15px;padding:15px;background:#303438;color:#fff;font-size:16px;font-weight:900}#msg{text-align:center;color:#999;font-size:13px;margin-top:10px}</style></head><body><div class="w"><div class="c"><h1>🗓️ 洗車受付日</h1><div class="m">洗車できる日をタップしてください。</div><div class="head"><button id="p" class="nav">‹</button><b id="mo"></b><button id="n" class="nav">›</button></div><div class="week"><div>日</div><div>月</div><div>火</div><div>水</div><div>木</div><div>金</div><div>土</div></div><div id="g" class="grid"></div><button id="save" class="save">受付可能日を保存</button><div id="msg"></div></div></div>
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>洗車受付日</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#f6f7f5;color:#303438;font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic",sans-serif}
+.w{max-width:460px;margin:auto;padding:18px 14px}
+.c{background:#fff;border:1px solid #d5d9dc;border-radius:28px;padding:20px 17px}
+h1{font-size:25px;margin:0}.m{color:#9aa0a6;font-size:13px;margin-top:5px}
+.head{display:flex;justify-content:space-between;align-items:center;margin:20px 0 10px}
+.nav{width:44px;height:44px;border:0;border-radius:12px;font-size:20px}
+.week,.grid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
+.week div{text-align:center;font-size:11px;color:#999}
+.day{min-height:58px;border:1px solid #e2e5e7;border-radius:12px;background:#fff;font-weight:800}
+.day.on{background:#effaf1;border-color:#bfe1c5}
+.day small{display:block;font-size:9px;color:#7d877f}
+.save{width:100%;margin-top:18px;border:0;border-radius:15px;padding:15px;background:#303438;color:#fff;font-size:16px;font-weight:900}
+#msg{text-align:center;color:#999;font-size:13px;margin-top:10px}
+.printbar{display:flex;gap:8px;margin-top:10px}
+.printbar select,.printbar button{height:46px;border-radius:13px;border:1px solid #d5d9dc;background:#fff;font-size:14px;font-weight:800}
+.printbar select{width:34%;padding:0 10px}.printbar button{flex:1;background:#eef1f2;color:#303438}
+#printSheet{display:none}
+@media print{
+ body{background:#fff}.w{display:none!important}
+ #printSheet{display:block!important;width:100%;color:#222}
+ .ps-title{text-align:center;font-size:17pt;font-weight:900;margin:0 0 1.5mm}
+ .ps-sub{text-align:center;font-size:7.5pt;margin:0 0 1.5mm;color:#555}
+ .ps-month{margin:1mm 0 2mm}.ps-month h2{text-align:center;font-size:10.5pt;margin:0 0 1mm}
+ .ps-week,.ps-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:.65mm}
+ .ps-week div{text-align:center;font-size:6pt;font-weight:700}
+ .ps-day{height:6.7mm;border:.3mm solid #cfd3d6;border-radius:1.3mm;text-align:center;padding-top:.7mm;font-size:7.5pt;font-weight:800}
+ .ps-day.open{border:.6mm solid #222;background:#f0f0f0}
+ .ps-day small{display:block;font-size:4.5pt;line-height:1}
+ .ps-bottom{display:flex;align-items:center;justify-content:center;gap:4mm;margin-top:1.5mm;border-top:.3mm solid #ddd;padding-top:1.5mm}
+ .ps-qr{width:23mm;height:23mm}.ps-qrtext{font-size:8pt;font-weight:800;line-height:1.45}
+ .ps-note{font-size:5.8pt;font-weight:500;color:#555}
+}
+</style>
+</head>
+<body>
+<div class="w"><div class="c">
+<h1>🗓️ 洗車受付日</h1>
+<div class="m">洗車できる日をタップしてください。</div>
+<div class="head"><button id="p" class="nav">‹</button><b id="mo"></b><button id="n" class="nav">›</button></div>
+<div class="week"><div>日</div><div>月</div><div>火</div><div>水</div><div>木</div><div>金</div><div>土</div></div>
+<div id="g" class="grid"></div>
+<button id="save" class="save">受付可能日を保存</button>
+<div class="printbar">
+<select id="paper"><option value="A6">A6 縦</option><option value="A5">A5 縦</option></select>
+<button id="printBtn">🖨 掲示用を印刷</button>
+</div>
+<div id="msg"></div>
+</div></div>
+
+<div id="printSheet"></div>
+<style id="pageStyle"></style>
+
 <script>
-const U='https://vqokuktwqrhxsvkwgyug.supabase.co',K='sb_publishable_dMrMp7HYQNxF0KlxrJHEPA_NJBgXR4n',$=x=>document.getElementById(x);let cur=new Date(),sel=new Set();
+const U='https://vqokuktwqrhxsvkwgyug.supabase.co',
+K='sb_publishable_dMrMp7HYQNxF0KlxrJHEPA_NJBgXR4n',
+$=x=>document.getElementById(x);
+let cur=new Date(),sel=new Set();
+
 const ymd=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
-async function api(path,opt={}){let r=await fetch(U+'/rest/v1/'+path,{...opt,headers:{apikey:K,Authorization:'Bearer '+K,'Content-Type':'application/json',...(opt.headers||{})}});if(!r.ok)throw Error(await r.text());return r.status===204?null:r.json()}
-async function load(){let a=ymd(new Date(cur.getFullYear(),cur.getMonth(),1)),b=ymd(new Date(cur.getFullYear(),cur.getMonth()+1,0));try{let x=await api('wash_available_days?select=wash_date,is_open&wash_date=gte.'+a+'&wash_date=lte.'+b);sel=new Set(x.filter(v=>v.is_open).map(v=>v.wash_date))}catch(e){sel=new Set()}render()}
-function render(){$('mo').textContent=cur.getFullYear()+'年 '+(cur.getMonth()+1)+'月';let f=new Date(cur.getFullYear(),cur.getMonth(),1),l=new Date(cur.getFullYear(),cur.getMonth()+1,0),h='';for(let i=0;i<f.getDay();i++)h+='<span></span>';for(let d=1;d<=l.getDate();d++){let s=ymd(new Date(cur.getFullYear(),cur.getMonth(),d)),on=sel.has(s);h+=`<button class="day ${on?'on':''}" data-d="${s}">${d}${on?'<small>受付可</small>':''}</button>`}$('g').innerHTML=h;document.querySelectorAll('.day').forEach(b=>b.onclick=()=>{sel.has(b.dataset.d)?sel.delete(b.dataset.d):sel.add(b.dataset.d);render()})}
-$('p').onclick=()=>{cur=new Date(cur.getFullYear(),cur.getMonth()-1,1);load()};$('n').onclick=()=>{cur=new Date(cur.getFullYear(),cur.getMonth()+1,1);load()};
+
+async function api(path,opt={}){
+ let r=await fetch(U+'/rest/v1/'+path,{...opt,headers:{apikey:K,Authorization:'Bearer '+K,'Content-Type':'application/json',...(opt.headers||{})}});
+ if(!r.ok)throw Error(await r.text());
+ return r.status===204?null:r.json()
+}
+async function load(){
+ let a=ymd(new Date(cur.getFullYear(),cur.getMonth(),1)),b=ymd(new Date(cur.getFullYear(),cur.getMonth()+1,0));
+ try{
+  let x=await api('wash_available_days?select=wash_date,is_open&wash_date=gte.'+a+'&wash_date=lte.'+b);
+  sel=new Set(x.filter(v=>v.is_open).map(v=>v.wash_date))
+ }catch(e){sel=new Set()}
+ render()
+}
+function render(){
+ $('mo').textContent=cur.getFullYear()+'年 '+(cur.getMonth()+1)+'月';
+ let f=new Date(cur.getFullYear(),cur.getMonth(),1),l=new Date(cur.getFullYear(),cur.getMonth()+1,0),h='';
+ for(let i=0;i<f.getDay();i++)h+='<span></span>';
+ for(let d=1;d<=l.getDate();d++){
+  let s=ymd(new Date(cur.getFullYear(),cur.getMonth(),d)),on=sel.has(s);
+  h+=`<button class="day ${on?'on':''}" data-d="${s}">${d}${on?'<small>受付可</small>':''}</button>`
+ }
+ $('g').innerHTML=h;
+ document.querySelectorAll('.day').forEach(b=>b.onclick=()=>{sel.has(b.dataset.d)?sel.delete(b.dataset.d):sel.add(b.dataset.d);render()})
+}
+$('p').onclick=()=>{cur=new Date(cur.getFullYear(),cur.getMonth()-1,1);load()};
+$('n').onclick=()=>{cur=new Date(cur.getFullYear(),cur.getMonth()+1,1);load()};
+
 $('save').onclick=async()=>{
-  $('msg').textContent='保存中…';
-  try{
-    const a=ymd(new Date(cur.getFullYear(),cur.getMonth(),1));
-    const b=ymd(new Date(cur.getFullYear(),cur.getMonth()+1,0));
-    const current=await api('wash_available_days?select=wash_date&wash_date=gte.'+a+'&wash_date=lte.'+b);
-    const before=new Set((current||[]).map(x=>x.wash_date));
-    const add=[...sel].filter(d=>!before.has(d));
-    const remove=[...before].filter(d=>!sel.has(d));
-    if(add.length){
-      await api('wash_available_days?on_conflict=wash_date',{
-        method:'POST',
-        headers:{Prefer:'resolution=merge-duplicates,return=minimal'},
-        body:JSON.stringify(add.map(d=>({wash_date:d,is_open:true,capacity:5})))
-      });
-    }
-    for(const d of remove){
-      await api('wash_available_days?wash_date=eq.'+d,{
-        method:'DELETE',
-        headers:{Prefer:'return=minimal'}
-      });
-    }
-    $('msg').textContent='保存しました';
-    await load();
-  }catch(e){
-    console.error(e);
-    $('msg').textContent='保存できませんでした';
+ $('msg').textContent='保存中…';
+ try{
+  const a=ymd(new Date(cur.getFullYear(),cur.getMonth(),1));
+  const b=ymd(new Date(cur.getFullYear(),cur.getMonth()+1,0));
+  const current=await api('wash_available_days?select=wash_date&wash_date=gte.'+a+'&wash_date=lte.'+b);
+  const before=new Set((current||[]).map(x=>x.wash_date));
+  const add=[...sel].filter(d=>!before.has(d));
+  const remove=[...before].filter(d=>!sel.has(d));
+  if(add.length){
+   await api('wash_available_days?on_conflict=wash_date',{
+    method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},
+    body:JSON.stringify(add.map(d=>({wash_date:d,is_open:true,capacity:5})))
+   });
   }
-};load();
-</script></body></html>
+  for(const d of remove){
+   await api('wash_available_days?wash_date=eq.'+d,{method:'DELETE',headers:{Prefer:'return=minimal'}});
+  }
+  $('msg').textContent='保存しました';
+  await load();
+ }catch(e){console.error(e);$('msg').textContent='保存できませんでした'}
+};
+
+const REQUEST_URL='https://kojionuki-rgb.github.io/-wash-service/request.html';
+
+async function getOpenDaysForMonth(base){
+ const a=ymd(new Date(base.getFullYear(),base.getMonth(),1));
+ const b=ymd(new Date(base.getFullYear(),base.getMonth()+1,0));
+ const rows=await api('wash_available_days?select=wash_date,is_open&wash_date=gte.'+a+'&wash_date=lte.'+b);
+ return new Set((rows||[]).filter(v=>v.is_open).map(v=>v.wash_date));
+}
+function printMonthHTML(base,openDays){
+ const y=base.getFullYear(),m=base.getMonth(),first=new Date(y,m,1),last=new Date(y,m+1,0);
+ let h='<div class="ps-month"><h2>'+y+'年 '+(m+1)+'月</h2><div class="ps-week"><div>日</div><div>月</div><div>火</div><div>水</div><div>木</div><div>金</div><div>土</div></div><div class="ps-grid">';
+ for(let i=0;i<first.getDay();i++)h+='<span></span>';
+ for(let d=1;d<=last.getDate();d++){
+  const s=ymd(new Date(y,m,d)),on=openDays.has(s);
+  h+='<div class="ps-day '+(on?'open':'')+'">'+d+(on?'<small>受付可</small>':'')+'</div>';
+ }
+ return h+'</div></div>';
+}
+$('printBtn').onclick=async()=>{
+ const b=$('printBtn');b.disabled=true;b.textContent='準備中…';
+ try{
+  const m1=new Date(cur.getFullYear(),cur.getMonth(),1);
+  const m2=new Date(cur.getFullYear(),cur.getMonth()+1,1);
+  const [d1,d2]=await Promise.all([getOpenDaysForMonth(m1),getOpenDaysForMonth(m2)]);
+  const qr='https://api.qrserver.com/v1/create-qr-code/?size=320x320&margin=8&data='+encodeURIComponent(REQUEST_URL);
+  $('printSheet').innerHTML=
+   '<div class="ps-title">🚕 洗車受付日</div>'+
+   '<div class="ps-sub">「受付可」の日をご確認ください</div>'+
+   printMonthHTML(m1,d1)+printMonthHTML(m2,d2)+
+   '<div class="ps-bottom"><img class="ps-qr" src="'+qr+'" alt="洗車依頼QR"><div class="ps-qrtext">QRから洗車依頼<br><span class="ps-note">カレンダーで受付日を確認してください</span></div></div>';
+  const paper=$('paper').value;
+  $('pageStyle').textContent='@media print{@page{size:'+paper+' portrait;margin:6mm}}';
+  const img=$('printSheet').querySelector('img');
+  if(!img.complete)await new Promise(resolve=>{img.onload=resolve;img.onerror=resolve});
+  window.print();
+ }catch(e){
+  console.error(e);$('msg').textContent='印刷データを作れませんでした';
+ }finally{
+  b.disabled=false;b.textContent='🖨 掲示用を印刷';
+ }
+};
+
+load();
+</script>
+</body>
+</html>
