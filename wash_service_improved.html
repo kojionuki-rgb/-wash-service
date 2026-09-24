@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#f6f6f3">
+<title>洗車サービス</title>
+<style>
+:root{--c:#303438;--line:#d9dde1;--bg:#f6f6f3;--green:#48d75a;--blue:#31a9ef;--yellow:#ffd84d;--pink:#ff9fbd}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic",Meiryo,sans-serif;color:var(--c)}
+button,input,select{font:inherit}.hidden{display:none!important}
+main{max-width:520px;margin:auto;padding:16px 14px 36px}.card{background:#fff;border:1.5px solid #a3a9af;border-radius:30px;padding:20px 18px}
+.top{display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);padding-bottom:18px}.title{font-size:30px;font-weight:950}.sub{font-size:13px;color:#92989e;font-weight:800}
+.btn{border:1px solid var(--line);background:#fff;border-radius:12px;padding:10px 12px;font-weight:900}.primary{width:100%;border:0;border-radius:15px;padding:15px;background:var(--c);color:#fff;font-size:17px;font-weight:900;margin-top:18px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px}.field label{display:block;font-size:13px;color:#858b91;font-weight:800;margin:0 0 6px 4px}.field input{width:100%;padding:14px;border:1px solid var(--line);border-radius:13px;font-size:18px;font-weight:800}
+.status{margin-top:18px;border-radius:25px;padding:20px;cursor:pointer}.status small{font-size:18px;font-weight:800}.number{text-align:center;font-size:80px;font-weight:950}.center{text-align:center}.label{font-size:18px;color:#92989e;font-weight:800}.big{font-size:48px;font-weight:950;margin-top:7px}.date{font-size:26px;font-weight:900;margin-top:8px}
+.confirm{padding:26px 4px 8px}.confirm-block{padding:26px 0;border-bottom:1px solid var(--line)}.confirm-block:first-child{border-top:1px solid var(--line)}
+.huge{font-size:54px;font-weight:950;margin-top:10px}.hint{font-size:11px;color:#b0b5ba;text-align:center;margin-top:24px}
+.tools{display:grid;grid-template-columns:auto 1fr auto;gap:8px;margin:14px 0}.tools input{width:100%;border:1px solid var(--line);border-radius:12px;padding:10px;text-align:center;font-weight:900}
+.filters{display:grid;grid-template-columns:1fr 1fr;gap:8px}.filters input,.filters select{width:100%;border:1px solid var(--line);border-radius:12px;padding:11px;background:#fff;font-weight:800}
+.stats{display:flex;gap:6px;flex-wrap:wrap;margin:12px 0}.pill{padding:6px 9px;border-radius:999px;background:#f0f2f3;font-size:11px;font-weight:900}
+.row{display:grid;grid-template-columns:10px 1fr auto;gap:12px;align-items:center;border:1px solid #e2e5e8;border-radius:18px;padding:14px 13px;margin:10px 0;background:#fff;cursor:pointer}.dot{width:10px;height:55px;border-radius:8px}.rn{font-size:27px;font-weight:950}.rs{font-size:12px;font-weight:900;color:#777}.meta{font-size:12px;color:#969ca2;font-weight:800;margin-top:5px}.dep{text-align:right}.dep b{font-size:23px}.empty{text-align:center;padding:35px;color:#999;font-weight:800}
+.sheet{position:fixed;inset:0;background:#0005;display:none;align-items:flex-end;justify-content:center;padding:16px}.sheet.show{display:flex}.sheetbox{width:min(430px,100%);background:#fff;border-radius:24px;padding:16px}.opt{width:100%;border:0;border-radius:16px;padding:16px;margin:6px 0;text-align:left;font-size:18px;font-weight:900}.g{background:#ddf8e2}.b{background:#dff2ff}.y{background:#fff4bd}.p{background:#ffd6e3}
+@media(max-width:380px){.grid,.filters{grid-template-columns:1fr}.title{font-size:27px}.number{font-size:68px}.huge{font-size:46px}}
+</style>
+</head>
+<body>
+<main id="editor">
+<section class="card">
+<div class="top"><div><div class="title">🚕 洗車サービス</div><div class="sub">管理・受付</div></div><button id="listBtn" class="btn">受付リスト</button></div>
+<div class="grid">
+<div class="field"><label>無線番号</label><input id="num" inputmode="numeric" placeholder="無線番号"></div>
+<div class="field"><label>次回出庫</label><input id="dep" type="time" value="06:30"></div>
+</div>
+<div id="statusCard" class="status"><small>無線番号</small><div id="numPreview" class="number">—</div></div>
+<div class="hint">無線番号カードをタップして状態変更</div>
+<button id="showBtn" class="primary">受付して依頼者に見せる</button>
+</section>
+</main>
+
+<main id="display" class="hidden">
+<section id="displayCard" class="card">
+<div class="top"><div><div class="title">🚕 洗車サービス</div><div class="sub">受付しました</div></div></div>
+<div class="confirm center">
+<div class="confirm-block"><div class="label">洗車受付日</div><div id="displayDate" class="date"></div></div>
+<div class="confirm-block"><div class="label">洗車対応時間</div><div class="huge">2:00〜6:00</div></div>
+</div>
+<div class="hint">画面をタップすると受付画面に戻ります</div>
+</section>
+</main>
+
+<main id="list" class="hidden">
+<section class="card">
+<div class="top"><div><div class="title">受付リスト</div><div id="listDate" class="sub"></div></div><button id="backBtn" class="btn">戻る</button></div>
+<div class="tools"><button id="prev" class="btn">‹</button><input id="datePick" type="date"><button id="next" class="btn">›</button></div>
+<div class="filters"><input id="search" type="search" inputmode="numeric" placeholder="無線番号で検索"><select id="filter"><option value="all">すべて</option><option value="received">受付</option><option value="paid">支払い済み</option><option value="unpaid">未収</option><option value="cancelled">キャンセル</option></select></div>
+<div id="stats" class="stats"></div><div id="count" class="sub"></div><div id="rows"></div>
+</section>
+</main>
+
+<div id="sheet" class="sheet"><div class="sheetbox"><h3>状態を変更</h3>
+<button class="opt g" data-status="received">受付（緑）</button>
+<button class="opt b" data-status="paid">支払い済み（青）</button>
+<button class="opt y" data-status="unpaid">未収（黄）</button>
+<button class="opt p" data-status="cancelled">キャンセル（ピンク）</button>
+</div></div>
+
+<script>
+const SUPABASE_URL='https://vqokuktwqrhxsvkwgyug.supabase.co';
+const SUPABASE_KEY='sb_publishable_dMrMp7HYQNxF0KlxrJHEPA_NJBgXR4n';
+const $=id=>document.getElementById(id);
+const colors={received:'#48d75a',paid:'#31a9ef',unpaid:'#ffd84d',cancelled:'#ff9fbd'};
+const labels={received:'受付',paid:'支払い済み',unpaid:'未収',cancelled:'キャンセル'};
+let state={id:null,radioNumber:'',departure:localStorage.getItem('washDeparture')||'06:30',status:'received',receivedAt:null,statusChangedAt:null};
+let selected=today(),dayRows=[];
+
+function headers(extra={}){return {'apikey':SUPABASE_KEY,'Authorization':`Bearer ${SUPABASE_KEY}`,'Content-Type':'application/json',...extra}}
+async function api(path,options={}){const r=await fetch(`${SUPABASE_URL}/rest/v1/${path}`,{...options,headers:headers(options.headers||{})});if(!r.ok)throw new Error(await r.text());const t=await r.text();return t?JSON.parse(t):null}
+function ymd(d){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
+function today(){return ymd(new Date())}
+function fromYmd(s){const [y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d)}
+function jp(d=new Date()){const w=['日','月','火','水','木','金','土'][d.getDay()];return `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日（${w}）`}
+function tm(iso){if(!iso)return'—';const d=new Date(iso);return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`}
+function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
+function render(){ $('num').value=state.radioNumber;$('dep').value=state.departure;$('numPreview').textContent=state.radioNumber||'—';$('statusCard').style.background=colors[state.status];$('statusCard').style.color=(state.status==='unpaid'||state.status==='cancelled')?'#303438':'#fff';localStorage.setItem('washDeparture',state.departure)}
+function reset(){state={id:null,radioNumber:'',departure:localStorage.getItem('washDeparture')||'06:30',status:'received',receivedAt:null,statusChangedAt:null};render()}
+function sync(){state.radioNumber=$('num').value.trim();if($('dep').value)state.departure=$('dep').value;render()}
+function sheet(on){$('sheet').classList.toggle('show',on)}
+async function insert(){const now=new Date().toISOString();const a=await api('wash_receptions',{method:'POST',headers:{Prefer:'return=representation'},body:JSON.stringify({radio_number:state.radioNumber,departure_time:state.departure,status:state.status,received_at:now,status_changed_at:now})});if(a?.[0]){state.id=a[0].id;state.receivedAt=a[0].received_at;state.statusChangedAt=a[0].status_changed_at}}
+async function update(){if(!state.id)return;const now=new Date().toISOString();state.statusChangedAt=now;await api(`wash_receptions?id=eq.${encodeURIComponent(state.id)}`,{method:'PATCH',headers:{Prefer:'return=minimal'},body:JSON.stringify({radio_number:state.radioNumber,departure_time:state.departure,status:state.status,status_changed_at:now})})}
+function range(s){const a=fromYmd(s),b=new Date(a.getFullYear(),a.getMonth(),a.getDate()+1);return[a.toISOString(),b.toISOString()]}
+async function load(s){const[a,b]=range(s);return api(`wash_receptions?select=id,radio_number,departure_time,status,received_at,status_changed_at&received_at=gte.${encodeURIComponent(a)}&received_at=lt.${encodeURIComponent(b)}&order=received_at.desc`,{method:'GET'})}
+async function refresh(){ $('listDate').textContent=jp(fromYmd(selected));$('rows').innerHTML='<div class="empty">読み込み中…</div>';try{dayRows=await load(selected);filterRows()}catch(e){$('rows').innerHTML='<div class="empty">リストを読み込めませんでした</div>';console.error(e)}}
+function filterRows(){const q=$('search').value.trim(),f=$('filter').value;const a=dayRows.filter(r=>(!q||String(r.radio_number||'').includes(q))&&(f==='all'||r.status===f));const c={received:0,paid:0,unpaid:0,cancelled:0};dayRows.forEach(r=>{if(c[r.status]!=null)c[r.status]++});$('stats').innerHTML=`<span class="pill">全 ${dayRows.length}</span><span class="pill g">受付 ${c.received}</span><span class="pill b">済 ${c.paid}</span><span class="pill y">未収 ${c.unpaid}</span><span class="pill p">取消 ${c.cancelled}</span>`;$('count').textContent=`${a.length}件・新しい順`;renderRows(a)}
+function openRow(r){state={id:r.id,radioNumber:String(r.radio_number||''),departure:(r.departure_time||'06:30').slice(0,5),status:r.status||'received',receivedAt:r.received_at,statusChangedAt:r.status_changed_at||r.received_at};render();$('list').classList.add('hidden');$('editor').classList.remove('hidden');window.scrollTo(0,0)}
+function renderRows(a){const box=$('rows');box.innerHTML='';if(!a.length){box.innerHTML='<div class="empty">該当する受付はありません</div>';return}a.forEach(r=>{const el=document.createElement('div');el.className='row';el.tabIndex=0;el.innerHTML=`<div class="dot" style="background:${colors[r.status]||colors.received}"></div><div><div><span class="rn">${esc(r.radio_number)}</span> <span class="rs">${labels[r.status]||'受付'}</span></div><div class="meta">受付 ${tm(r.received_at)}　変更 ${tm(r.status_changed_at||r.received_at)}</div></div><div class="dep"><div class="sub">次回出庫</div><b>${(r.departure_time||'').slice(0,5).replace(/^0/,'')}</b></div>`;el.onclick=()=>openRow(r);el.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openRow(r)}};box.appendChild(el)})}
+$('num').oninput=sync;$('dep').onchange=sync;$('statusCard').onclick=()=>sheet(true);$('sheet').onclick=e=>{if(e.target===$('sheet'))sheet(false)};
+document.querySelectorAll('[data-status]').forEach(b=>b.onclick=async()=>{state.status=b.dataset.status;render();sheet(false);try{await update()}catch(e){alert('状態を保存できませんでした')}});
+$('showBtn').onclick=async()=>{sync();if(!state.radioNumber){$('num').focus();return}const b=$('showBtn'),old=b.textContent;b.disabled=true;b.textContent='保存中…';try{state.id?await update():await insert();$('displayDate').textContent=jp(state.receivedAt?new Date(state.receivedAt):new Date());$('editor').classList.add('hidden');$('display').classList.remove('hidden');window.scrollTo(0,0)}catch(e){alert('受付データを保存できませんでした')}finally{b.disabled=false;b.textContent=old}};
+$('displayCard').onclick=()=>{$('display').classList.add('hidden');$('editor').classList.remove('hidden');reset()};
+$('listBtn').onclick=async()=>{selected=today();$('datePick').value=selected;$('search').value='';$('filter').value='all';$('editor').classList.add('hidden');$('list').classList.remove('hidden');await refresh()};
+$('backBtn').onclick=()=>{$('list').classList.add('hidden');$('editor').classList.remove('hidden');reset()};
+function shift(n){const d=fromYmd(selected);d.setDate(d.getDate()+n);selected=ymd(d);$('datePick').value=selected;refresh()}
+$('prev').onclick=()=>shift(-1);$('next').onclick=()=>shift(1);$('datePick').onchange=()=>{if($('datePick').value){selected=$('datePick').value;refresh()}};$('search').oninput=filterRows;$('filter').onchange=filterRows;
+reset();
+</script>
+</body></html>
