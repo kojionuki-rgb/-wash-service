@@ -28,7 +28,7 @@ const U='https://vqokuktwqrhxsvkwgyug.supabase.co',K='sb_publishable_dMrMp7HYQNx
 const C={received:'#48d75a',paid:'#31a9ef',unpaid:'#ffd84d',cancelled:'#ff9fbd'},L={received:'受付',paid:'支払い済み',unpaid:'未収',cancelled:'キャンセル'};
 let st,rows=[],sel=today();
 function fresh(){st={id:null,radio:'',dep:localStorage.wDep||'06:30',start:localStorage.wStart||'02:00',end:localStorage.wEnd||'06:00',status:'received',receivedAt:null};render()}
-function render(){$('num').value=st.radio;$('dep').value=st.dep;$('start').value=st.start;$('end').value=st.end;$('preview').textContent=st.radio||'—';$('status').style.background=C[st.status];$('status').style.color=['unpaid','cancelled'].includes(st.status)?'#303438':'#fff';$('delete').classList.toggle('hide',!st.id);localStorage.wDep=st.dep;localStorage.wStart=st.start;localStorage.wEnd=st.end}
+function render(){$('num').value=st.radio;$('dep').value=st.dep;$('start').value=st.start;$('end').value=st.end;$('preview').textContent=st.radio||'—';$('status').style.background=C[st.status];$('status').style.color=['unpaid','cancelled'].includes(st.status)?'#303438':'#fff';$('delete').classList.toggle('hide',!st.id);$('delete').disabled=false;localStorage.wDep=st.dep;localStorage.wStart=st.start;localStorage.wEnd=st.end}
 function sync(){st.radio=$('num').value.trim();st.dep=$('dep').value||st.dep;st.start=$('start').value||st.start;st.end=$('end').value||st.end;render()}
 function H(extra={}){return{apikey:K,Authorization:`Bearer ${K}`,'Content-Type':'application/json',...extra}}
 async function api(path,o={}){let r=await fetch(`${U}/rest/v1/${path}`,{...o,headers:H(o.headers||{})});if(!r.ok)throw Error(await r.text());let t=await r.text();return t?JSON.parse(t):null}
