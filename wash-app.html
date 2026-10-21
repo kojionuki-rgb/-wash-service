@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="洗車サービス"><meta name="theme-color" content="#f6f6f3"><meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><title>洗車サービス</title>
+<style>body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#f6f6f3;color:#303438;text-align:center;padding:48px 16px}button{padding:12px;border-radius:10px}p{line-height:1.7}</style></head><body><h2>洗車サービス</h2><p id="status">最新版を確認しています…</p><div id="help" hidden><p>通信できませんでした。データは削除されていません。</p><button onclick="location.reload()">再読み込み</button><p><a href="./wash-v68.html">v6.8を直接開く</a></p></div>
+<script>
+(async function(){
+ const s=document.getElementById('status'),help=document.getElementById('help');
+ try{
+  const token=Date.now();
+  const mr=await fetch('./wash-release.json?t='+token,{cache:'no-store'});
+  if(!mr.ok)throw new Error('最新版の確認に失敗');
+  const m=await mr.json();
+  if(!/^wash-v[0-9]+\.html$/.test(m.file))throw new Error('更新設定が不正');
+  const ar=await fetch('./'+m.file+'?t='+token,{cache:'no-store'});
+  if(!ar.ok)throw new Error('最新版を取得できません');
+  const page=await ar.text();
+  if(!page.includes('<title>洗車サービス')||!page.includes('wash_receptions'))throw new Error('アプリの内容を確認できません');
+  document.open();document.write(page);document.close();
+ }catch(e){s.textContent='アプリの読込に失敗しました';help.hidden=false;console.error(e)}
+})();
+</script></body></html>
